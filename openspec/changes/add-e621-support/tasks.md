@@ -5,7 +5,7 @@
 - [ ] 1.6 Add unit tests for the registry (default source, `getSource`, unknown-id behavior) and for settings persistence round-trip of the active-source selection.
 - [ ] 1.3 Create `src/sources/registry.ts` — a registry keyed by source id with a default source of Rule34, a `getSource(id)` accessor, and a reactive "active source" that defaults to Rule34 when nothing is persisted.
 - [ ] 1.4 Add the active-source selection to `src/stores/settings.ts`, persisted under the existing settings pattern, defaulting to Rule34 on first run.
-- [ ] 1.5 Extract the shared search-request primitives (serial queue at the source's declared interval, timeout, retry count, in-memory TTL cache) out of `src/api/client.ts` so each adapter reuses them rather than reimplementing.
+- [x] 1.5 Extract the shared search-request primitives (serial queue at the source's declared interval, timeout, retry count, in-memory TTL cache) out of `src/api/client.ts` so each adapter reuses them rather than reimplementing.
 
 ## 2. Rule34 Adapter (Refactor, No Behavior Change)
 
