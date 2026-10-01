@@ -15,20 +15,25 @@
   },
   "dependencies": {
     "@vueuse/core": "^11.3.0",
+    "date-fns": "^4.4.0",
+    "he": "^1.2.0",
     "ofetch": "^1.5.1",
+    "p-queue": "^9.3.3",
     "pinia": "^2.3.1",
     "vue": "^3.5",
     "vue-router": "^4.6.4",
-    "vuetify": "^3.12.8"
+    "vuetify": "^3.12.8",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
+    "@types/node": "^26.6.3",
     "@vitejs/plugin-vue": "^5.2.0",
-    "@vitest/coverage-v8": "^2.1.9",
+    "@vitest/coverage-v8": "^5.0.3",
     "happy-dom": "^15.11.7",
     "playwright": "^1.52.0",
     "typescript": "^5.5",
     "vite": "^6.0.0",
-    "vitest": "^2.1.9",
+    "vitest": "^5.0.3",
     "vue-tsc": "^2.1.0"
   }
 }

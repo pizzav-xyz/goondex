@@ -14,6 +14,9 @@ export default defineConfig({
     globals: true,
     passWithNoTests: true,
     setupFiles: ['./tests/setup.ts'],
+    // Unit tests live beside the code they cover; `tests/e2e/` holds Playwright
+    // scripts, which collecting here made every unit run report a spurious error.
+    include: ['src/**/*.{test,spec}.{ts,tsx}'],
     coverage: {
       provider: 'v8',
       include: ['src/**/*.{ts,vue}'],
