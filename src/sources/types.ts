@@ -18,6 +18,20 @@ export type CanonicalRating = (typeof CANONICAL_RATINGS)[number]
 
 export const DEFAULT_SOURCE_ID: SourceId = 'rule34'
 
+/** Single enumeration of every source id, in registry order. */
+export const SOURCE_IDS = ['rule34', 'e621'] as const satisfies readonly SourceId[]
+
+/**
+ * Narrows an untrusted string to a known source id.
+ *
+ * Storage is user-writable and may hold an id from a build that knew a source
+ * this one does not, so an unknown id must fall back to the default rather than
+ * reach the registry as-is.
+ */
+export function isSourceId(value: unknown): value is SourceId {
+  return typeof value === 'string' && (SOURCE_IDS as readonly string[]).includes(value)
+}
+
 /** Fields a source can order by. Restricted to what the sources honor. */
 export const SORT_FIELDS = ['id', 'score', 'date'] as const
 export type SortField = (typeof SORT_FIELDS)[number]

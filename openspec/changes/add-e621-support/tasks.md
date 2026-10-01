@@ -2,9 +2,9 @@
 
 - [x] 1.1 Create `src/sources/types.ts` with the canonical `Post` interface (normalized `tags` array, Unix-seconds `timestamp`, canonical rating, `fileUrl`/`previewUrl`/`sampleUrl`, `fileExt`, `sourceUrl`, `score`, `source` id) and the `SourceCapabilities` descriptor (rating filter, native date filter, ordering support with the ordered field set, tag completion, `maxPageSize`, auth mechanism, permitted media hosts, `videoExtensions` — video support is derived from a non-empty `videoExtensions`, never from a separate boolean flag).
 - [x] 1.2 Define the `SourceAdapter` interface as the union of all adapter capabilities, with `id`, `label`, `capabilities`, `search()`, `autocomplete()`, and `postDetail()` members. There is deliberately no `searchUrl()` member: CSP host coverage is derived from the already-declared permitted media hosts (see 8.6), so a URL-building method would serve a single consumer. Add unit tests asserting a well-formed adapter satisfies the contract.
-- [ ] 1.6 Add unit tests for the registry (default source, `getSource`, unknown-id behavior) and for settings persistence round-trip of the active-source selection.
-- [ ] 1.3 Create `src/sources/registry.ts` — a registry keyed by source id with a default source of Rule34, a `getSource(id)` accessor, and a reactive "active source" that defaults to Rule34 when nothing is persisted.
-- [ ] 1.4 Add the active-source selection to `src/stores/settings.ts`, persisted under the existing settings pattern, defaulting to Rule34 on first run.
+- [x] 1.6 Add unit tests for the registry (default source, `getSource`, unknown-id behavior) and for settings persistence round-trip of the active-source selection.
+- [x] 1.3 Create `src/sources/registry.ts` — a registry keyed by source id with a default source of Rule34, a `getSource(id)` accessor, and a reactive "active source" that defaults to Rule34 when nothing is persisted.
+- [x] 1.4 Add the active-source selection to `src/stores/settings.ts`, persisted under the existing settings pattern, defaulting to Rule34 on first run.
 - [x] 1.5 Extract the shared search-request primitives (serial queue at the source's declared interval, timeout, retry count, in-memory TTL cache) out of `src/api/client.ts` so each adapter reuses them rather than reimplementing.
 
 ## 2. Rule34 Adapter (Refactor, No Behavior Change)

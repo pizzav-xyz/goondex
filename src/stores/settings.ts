@@ -3,6 +3,8 @@ import { computed, ref, watch } from 'vue'
 import { ACCENT_PALETTE, DEFAULT_ACCENT_ID } from '@/constants/accents'
 import { DEV_TTL } from '@/constants/dev'
 import type { AccentColorId, ThemeMode, WatchedMode } from '@/types'
+import type { SourceId } from '@/sources/types'
+import { DEFAULT_SOURCE_ID, isSourceId } from '@/sources/types'
 
 export { ACCENT_PALETTE }
 
@@ -11,6 +13,7 @@ const KEYS = {
   ACCENT: 'r34_accent',
   SAFE_MODE: 'r34_safe_mode',
   WATCHED_MODE: 'r34_hide_watched',
+  ACTIVE_SOURCE: 'r34_active_source',
   SEARCH_STATE: 'r34_search_state',
   SEARCH_STATE_TS: 'r34_search_state_ts',
 } as const
@@ -53,6 +56,18 @@ export const useSettingsStore = defineStore('settings', () => {
   const watchedMode = ref<WatchedMode>(readWatchedMode())
   function setWatchedMode(mode: WatchedMode) { watchedMode.value = mode }
 
+  // --- Active Source ---
+  // Sole owner of the persisted selection: the registry dispatches through
+  // this value rather than holding a second copy, so they cannot drift.
+  function readActiveSource(): SourceId {
+    const val = localStorage.getItem(KEYS.ACTIVE_SOURCE)
+    return isSourceId(val) ? val : DEFAULT_SOURCE_ID
+  }
+  const activeSource = ref<SourceId>(readActiveSource())
+  function setActiveSource(id: SourceId) {
+    if (isSourceId(id)) activeSource.value = id
+  }
+
   // --- Search State (dev persistence) ---
   interface SavedSearchState { tags: string; ratings: string[] }
 
@@ -79,12 +94,14 @@ export const useSettingsStore = defineStore('settings', () => {
   watch(accentId, (v) => localStorage.setItem(KEYS.ACCENT, v))
   watch(safeMode, (v) => localStorage.setItem(KEYS.SAFE_MODE, String(v)))
   watch(watchedMode, (v) => localStorage.setItem(KEYS.WATCHED_MODE, v))
+  watch(activeSource, (v) => localStorage.setItem(KEYS.ACTIVE_SOURCE, v))
 
   return {
     theme, setTheme,
     accentId, accentColor, setAccent,
     safeMode, setSafeMode,
     watchedMode, setWatchedMode,
+    activeSource, setActiveSource,
     getSearchState, setSearchState,
   }
 })
