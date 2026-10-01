@@ -62,9 +62,10 @@ export interface SourceCapabilities {
   /** Every host this source serves media from, for the SSRF allowlist and CSP. */
   readonly mediaHosts: readonly string[]
   /**
-   * Container codecs this source serves as video. A non-empty array means
-   * video is supported. `gif` is matched as video-capable by the shared
-   * media helpers alongside this array rather than being listed in it.
+   * Container codecs this source serves as video, as the source's own values
+   * (lowercase, no dot). A non-empty array means video is supported. The set is
+   * per adapter because the two boards do not overlap: Rule34 serves mp4 and
+   * gif with no webm mirror on any host, e621 serves webm and mp4.
    */
   readonly videoExtensions: readonly string[]
   /** Minimum milliseconds between requests to this source. */
