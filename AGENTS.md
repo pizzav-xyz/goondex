@@ -11,12 +11,12 @@ Global rules for YOU working in this repo. These are **hard rules, not suggestio
   - error handling for states the type system or a caller already prevents
   - indirection that only exists to avoid touching a second file
   - "flexible" helpers that handle 3 shapes when only 1 is used
-- **Line count is not the metric; speculative surface is.** A long file of straight-line code that does the real job is simpler than a short file of indirection.
+- **Simplicity is not the same as smallness.** A short file of indirection is worse than a long file of straight-line code — but a file past the Rule 7 ceiling must still be split. Split along a real concern boundary, never to hit a number.
 - Simplicity ranks **below** Rules 2, 3, 4, and 5 — never simplify by merging files, dropping a library, skipping verification, or mocking instead of running for real.
 
 ## 2. File structure
 - **No monofiles.** Code must be split into multiple files by logical concern (e.g. models, routes, utils, config kept separate).
-- No fixed line-count limit — use judgment — but a single file holding "the whole app" is never acceptable.
+- A single file holding "the whole app" is never acceptable, and no file may exceed the Rule 7 line ceiling — split by logical concern (models, routes, utils, config kept separate).
 - **No duplicated logic across files.** If the same logic appears more than once, extract it into a shared module and import it. Copy-pasted blocks are a bug, not a shortcut.
 
 ## 3. Libraries over hand-rolled code
@@ -39,6 +39,12 @@ Global rules for YOU working in this repo. These are **hard rules, not suggestio
 ## 6. Commit often
 - Commit frequently to avoid lost work. Granularity is the agent's judgment call, but uncommitted work should never pile up into one large, unreviewable change.
 
+## 7. File size limit
+- No source file may exceed **300 lines**, counted as raw `wc -l`. Comments and blank lines count; do not exclude, reformat, or compress lines to fit.
+- For `.vue` files, count the `<script>` and `<template>` blocks only. `<style>` blocks do not count.
+- This applies to every file — production, test, or data. There is no exemption category, and none may be added.
+- Over 300 means split the file along a real logical seam. Moving code into a data-shaped or test-shaped file to dodge the limit is a violation, not a fix.
+
 ---
 
-**Summary for the agent:** simple > clever, split files, don't repeat yourself, use maintained libraries (found via live search, not memory), verify everything against real sources/browsers before coding, test against real running instances with real requests, and commit often.
+**Summary for the agent:** simple > clever, split files (300-line ceiling, Rule 7), don't repeat yourself, use maintained libraries (found via live search, not memory), verify everything against real sources/browsers before coding, test against real running instances with real requests, and commit often.

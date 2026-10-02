@@ -19,6 +19,12 @@ Launch **4 parallel background subagents** to audit `<PROJECT_DIR>/`. Each produ
 ### Agent 1 — Code Simplifier (`category: deep`)
 Sweep every file in `<PROJECT_DIR>/` for overcomplicated code. Flag functions over ~40 lines, nested conditionals >3 deep, duplicated logic across modules, and any code that can be replaced with a stdlib call. **Specifically look for fallback chains** — functions with multiple try/except, if/elif/else fallback paths, or "try strategy A, if that fails try B" patterns. For each fallback chain found, state the single clean approach that replaces it. **Check file organization** — flag files over ~150 lines that contain multiple unrelated concerns (e.g. an auth module that also handles CLI parsing). Recommend how to split monoliths into focused modules. Include `file:line` for each finding. Output a numbered list grouped by severity (critical → trivial).
 
+**File size hard limit — measure this, do not eyeball it.** Run `wc -l` on every source file. Any file over **300 lines is a finding**, regardless of how clean it looks. Rules:
+- Raw `wc -l`. Comments and blank lines count. Do not exclude them, and do not reformat a file to claim it fits.
+- For `.vue` files count the `<script>` and `<template>` blocks only; `<style>` does not count.
+- Applies to every file — production, test, and data. No exemption category exists.
+- For each violation, report `file:line-count` and the **specific logical seam** to split along. "Split it" with no seam is not an acceptable finding. If a file exceeds 300 but is genuinely cohesive, say so explicitly rather than inventing a split.
+
 ### Agent 2 — Dependency & Library Audit (`category: deep`)
 First, read every source file in `<PROJECT_DIR>/` plus dependency manifests (`requirements.txt`, `pyproject.toml`, `package.json`, `Cargo.toml`, `go.mod`, `Gemfile`, `build.gradle`, or whatever is relevant to this project). Map every import to its usage.
 
@@ -80,7 +86,8 @@ After all 4 agents complete, merge their findings into one **Unified Audit Repor
 2. **Deduplicated findings** — merge overlapping issues, keep the most detailed version
 3. **Priority ranking** — sort all findings by impact: security > runtime breaks > code quality > style
 4. **Fallback chain inventory** — for every multi-path code found, a table: Location | Current paths (N) | Recommended single clean path | Lines saved
-5. **Action plan** — ordered list of what to fix first, with agent + finding # cross-references
-6. **Pass/Fail** — Does this codebase ship? YES with caveats or NO with blockers.
+5. **Oversize file inventory** — every file over 300 lines: File | `wc -l` | Split seam. A file that only passes because its data rows are counted as "code" is still a violation.
+6. **Action plan** — ordered list of what to fix first, with agent + finding # cross-references
+7. **Pass/Fail** — Does this codebase ship? YES with caveats or NO with blockers.
 
 Output the full report as markdown.
