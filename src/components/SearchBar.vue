@@ -2,6 +2,7 @@
 import { ref, computed, watch } from 'vue'
 import { useDebounceFn } from '@vueuse/core'
 import { useAPIClient } from '@/composables/useAPIClient'
+import { useActiveSource } from '@/sources/registry'
 import { AUTOCOMPLETE_DEBOUNCE, AUTOCOMPLETE_MAX_RESULTS } from '@/config'
 import SyntaxHelp from './SyntaxHelp.vue'
 import type { AutocompleteSuggestion } from '@/types'
@@ -17,16 +18,25 @@ const showSyntaxHelp = ref(false)
 const autocompleteItems = ref<AutocompleteSuggestion[]>([])
 const showAutocomplete = ref(false)
 const acIndex = ref(-1)
+const acFailed = ref(false)
 const inputRef = ref<HTMLInputElement | null>(null)
 const dropdownRef = ref<HTMLDivElement | null>(null)
 const api = useAPIClient()
+const caps = computed(() => useActiveSource().value.capabilities)
 
-const RATINGS = [
-  { label: 'General', value: 'general' },
-  { label: 'Sensitive', value: 'sensitive' },
-  { label: 'Questionable', value: 'questionable' },
-  { label: 'Explicit', value: 'explicit' },
-] as const
+const RATING_LABELS: Record<string, string> = {
+  safe: 'Safe',
+  questionable: 'Questionable',
+  explicit: 'Explicit',
+}
+
+/** Only ratings the active adapter can actually express are offered. */
+const RATINGS = computed(() =>
+  (caps.value.ratingFilter ? caps.value.ratings : []).map((value) => ({
+    label: RATING_LABELS[value] ?? value,
+    value,
+  })),
+)
 
 const hasActiveFilters = computed(() => activeRatings.value.length > 0 || activeTags.value.length > 0)
 
@@ -36,6 +46,7 @@ const fetchAutocomplete = useDebounceFn(async (query: string) => {
   if (trimmedQuery.length < 2) {
     autocompleteItems.value = []
     showAutocomplete.value = false
+    acFailed.value = false
     return
   }
 
@@ -44,6 +55,7 @@ const fetchAutocomplete = useDebounceFn(async (query: string) => {
     if (searchInput.value.trim() !== trimmedQuery) return
 
     const sliced = results.slice(0, AUTOCOMPLETE_MAX_RESULTS)
+    acFailed.value = false
     if (!sliced.length) {
       showAutocomplete.value = false
       return
@@ -53,7 +65,11 @@ const fetchAutocomplete = useDebounceFn(async (query: string) => {
     showAutocomplete.value = true
     acIndex.value = -1
   } catch {
+    // A failed request is reported distinctly from zero matches: showing no
+    // dropdown here would read as "this tag does not exist".
+    autocompleteItems.value = []
     showAutocomplete.value = false
+    acFailed.value = true
   }
 }, AUTOCOMPLETE_DEBOUNCE)
 
@@ -218,6 +234,12 @@ defineExpose({
             >{{ item.count.toLocaleString() }}</span>
           </div>
         </div>
+        <div
+          v-else-if="acFailed"
+          class="autocomplete-dropdown autocomplete-failed"
+        >
+          <span class="autocomplete-label">Tag suggestions unavailable</span>
+        </div>
       </div>
       <v-btn
         color="primary"
@@ -255,7 +277,7 @@ defineExpose({
     </div>
 
     <!-- Filter Row: Rating Chips -->
-    <div class="filter-row">
+    <div v-if="RATINGS.length" class="filter-row">
       <v-chip
         v-for="r in RATINGS"
         :key="r.value"
@@ -373,6 +395,15 @@ defineExpose({
 .autocomplete-item:hover,
 .autocomplete-item.active {
   background: var(--md-surface-container-high);
+}
+
+.autocomplete-failed {
+  padding: 12px 16px;
+}
+
+.autocomplete-failed .autocomplete-label {
+  color: var(--md-on-surface-variant);
+  font-size: 13px;
 }
 
 .autocomplete-label {

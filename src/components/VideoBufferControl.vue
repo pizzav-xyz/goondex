@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useVideoBuffer } from '@/composables/useVideoBuffer'
+import { hasVideoSupport, isVideo } from '@/sources/media'
 import { watchedKey } from '@/stores/watched'
 import type { Post } from '@/types'
 
@@ -17,6 +18,9 @@ const props = defineProps<{
 
 const { buffering, bufferedCount, bufferVideos, cancelBuffer } = useVideoBuffer()
 
+/** Withheld entirely when the active source serves no video. */
+const videoSupported = hasVideoSupport()
+
 /** Number of videos to buffer next */
 const bufferCount = ref<string>('20')
 const bufferCountNum = computed(() => {
@@ -24,7 +28,8 @@ const bufferCountNum = computed(() => {
   return isNaN(n) || n < 1 ? 0 : n
 })
 
-const canBuffer = computed(() => bufferCountNum.value > 0)
+const videoPostCount = computed(() => props.posts.filter(isVideo).length)
+const canBuffer = computed(() => bufferCountNum.value > 0 && videoPostCount.value > 0)
 
 async function handleBuffer() {
   if (buffering.value) {
@@ -40,7 +45,7 @@ async function handleBuffer() {
 </script>
 
 <template>
-  <div class="video-buffer-control">
+  <div v-if="videoSupported" class="video-buffer-control">
     <div class="buffer-controls">
       <v-text-field
         v-model="bufferCount"
@@ -75,7 +80,7 @@ async function handleBuffer() {
           {{ totalCount.toLocaleString() }} loaded — {{ bufferedCount }} buffered
         </template>
         <template v-else>
-          {{ totalCount.toLocaleString() }} videos loaded
+          {{ videoPostCount.toLocaleString() }} videos loaded
         </template>
       </div>
       <v-progress-linear

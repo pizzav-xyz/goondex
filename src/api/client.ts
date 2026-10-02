@@ -1,5 +1,5 @@
 import type { SearchParams } from '@/types'
-import type { AutocompleteSuggestion, Post } from '@/sources/types'
+import type { AutocompleteSuggestion, DroppedTerm, Post } from '@/sources/types'
 import { useActiveSource } from '@/sources/registry'
 import { PAGE_SIZE } from '@/config'
 
@@ -24,6 +24,12 @@ import { PAGE_SIZE } from '@/config'
 
 export { PAGE_SIZE }
 
+export interface SearchResult {
+  posts: Post[]
+  /** Terms the active source could not honor, each with its reason. */
+  dropped: readonly DroppedTerm[]
+}
+
 export class APIClient {
   /**
    * Runs a search on the active source and returns canonical posts.
@@ -31,28 +37,28 @@ export class APIClient {
    * `tags` and `ratings` are the app-facing inputs; they are assembled into one
    * canonical query and handed to the adapter, which translates it. A rating
    * the target source cannot express is reported through the adapter's dropped
-   * list rather than approximated — reaching the reporting layer in §6.3.
+   * list rather than approximated.
    */
   async search({
     tags = '',
     page = 0,
     limit = PAGE_SIZE,
     ratings,
-  }: SearchParams = {}): Promise<Post[]> {
+  }: SearchParams = {}): Promise<SearchResult> {
     const terms: string[] = []
     if (tags.trim()) terms.push(tags.trim())
     for (const rating of ratings ?? []) {
       terms.push(`rating:${rating}`)
     }
 
-    const { posts } = await useActiveSource().value.search({
+    const outcome = await useActiveSource().value.search({
       query: terms.join(' '),
       page,
       limit,
     })
     // Copied because the canonical shape is readonly while the app-facing
     // `Post[]` this returns has always been a mutable array.
-    return [...posts]
+    return { posts: [...outcome.posts], dropped: outcome.dropped }
   }
 
   async autocomplete(query: string): Promise<AutocompleteSuggestion[]> {

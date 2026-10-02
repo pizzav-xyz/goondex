@@ -52,7 +52,7 @@ export function useLightbox({ api, watched, searchBarRef }: UseLightboxOptions) 
 
   async function fetchPostDetails(id: number) {
     try {
-      const posts = await api.search({ tags: `id:${id}`, limit: 1 })
+      const { posts } = await api.search({ tags: `id:${id}`, limit: 1 })
       if (posts.length && lightboxPost.value?.id === id) {
         Object.assign(lightboxPost.value, posts[0])
       }

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useSettingsStore } from '@/stores/settings'
+import { useActiveSource } from '@/sources/registry'
 import { useTheme } from '@/composables/useTheme'
 
 const emit = defineEmits<{
@@ -9,6 +10,7 @@ const emit = defineEmits<{
 
 const settings = useSettingsStore()
 const { cycleTheme } = useTheme()
+const activeSource = computed(() => useActiveSource().value)
 
 const WATCHED_MODES = ['show', 'dim', 'hide'] as const
 const WATCHED_ICONS: Record<string, string> = {
@@ -41,6 +43,15 @@ function cycleWatchedMode() {
       <v-app-bar-title class="app-title">
         <v-icon icon="explore" color="primary" class="mr-2" />
         rule34
+        <v-chip
+          size="x-small"
+          variant="tonal"
+          color="primary"
+          class="ml-2 source-chip"
+          :title="`Active source: ${activeSource.label}`"
+        >
+          {{ activeSource.label }}
+        </v-chip>
       </v-app-bar-title>
 
       <v-btn
@@ -50,14 +61,6 @@ function cycleWatchedMode() {
         :aria-label="watchedLabel"
         :title="watchedLabel"
         @click="cycleWatchedMode"
-      />
-      <v-btn
-        icon="shield"
-        :variant="settings.safeMode ? 'flat' : 'text'"
-        :color="settings.safeMode ? 'secondary' : undefined"
-        aria-label="Safe mode"
-        title="Safe mode"
-        @click="settings.setSafeMode(!settings.safeMode)"
       />
       <v-btn
         :icon="themeIcon"

@@ -1,6 +1,7 @@
 import { ref, type Ref } from 'vue'
 import type { Post } from '@/types'
 import { MAX_CONCURRENT_PROBE, PROBE_TIMEOUT } from '@/config'
+import { isVideo, hasVideoSupport } from '@/sources/media'
 
 /** Persistent cache across searches — avoids re-probing the same videos. */
 const durationCache = new Map<number, number>()
@@ -20,11 +21,12 @@ export function useVideoDuration() {
    * Already-cached posts are skipped.
    */
   async function probeDurations(posts: Post[]): Promise<Map<number, number>> {
-    const videos = posts.filter(
-      p =>
-        !durationCache.has(p.id) &&
-        (p.fileExt === 'webm' || p.fileExt === 'mp4'),
-    )
+    if (!hasVideoSupport()) {
+      durationMap.value = new Map(durationCache)
+      return durationMap.value
+    }
+
+    const videos = posts.filter(p => !durationCache.has(p.id) && isVideo(p))
 
     if (videos.length === 0) {
       durationMap.value = new Map(durationCache)
@@ -85,7 +87,7 @@ export function useVideoDuration() {
       video.onerror = () => settle()
 
       document.body.appendChild(video)
-      video.src = post.fileUrl ?? ''
+      video.src = post.fileUrl ?? post.sampleUrl ?? ''
     })
   }
 

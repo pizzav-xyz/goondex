@@ -14,6 +14,7 @@ import { useSettingsStore } from '@/stores/settings'
 import { useWatchedStore, watchedKey } from '@/stores/watched'
 import { parseDurationFilter, stripDurationTags, filterByDuration } from '@/utils/durationFilter'
 import type { Post } from '@/types'
+import type { DroppedTerm } from '@/sources/types'
 
 const route = useRoute()
 const router = useRouter()
@@ -45,13 +46,23 @@ const currentPage = ref(0)
 const allPosts = ref<Post[]>([])
 const hasDurationFilter = ref(false)
 const searchError = ref<string | null>(null)
+/** Search terms the active source could not honor, surfaced to the user. */
+const droppedTerms = ref<readonly DroppedTerm[]>([])
 
 // Watched state
 const watchedMode = computed(() => settings.watchedMode)
 const watchedKeys = computed(() => watched.watchedKeys)
 
-/** Whether the API returned a full page (i.e. more pages likely exist). */
-const apiHasMore = computed(() => allPosts.value.length >= (currentPage.value + 1) * PAGE_SIZE)
+/** Posts after API fetch but before duration filtering (for probing). */
+const rawPosts = ref<Post[]>([])
+
+/**
+ * Whether the API returned a full page. Measured against `rawPosts`, not
+ * `allPosts`: duration filtering shrinks `allPosts` below a page's worth while
+ * the API still has pages left, and comparing the filtered length would end
+ * pagination early.
+ */
+const apiHasMore = computed(() => rawPosts.value.length >= (currentPage.value + 1) * PAGE_SIZE)
 
 /** Whether to keep fetching: in "hide" mode, fetch until we have enough visible posts. */
 const hasMore = computed(() => {
@@ -61,8 +72,6 @@ const hasMore = computed(() => {
   return visibleCount < PAGE_SIZE
 })
 
-/** Posts after API fetch but before duration filtering (for probing). */
-const rawPosts = ref<Post[]>([])
 let activeDurationConditions = parseDurationFilter('')
 
 /** Apply duration filter using the probed duration map. */
@@ -147,12 +156,13 @@ async function doSearch(tags: string, ratings: string[]) {
   // Fetch first page
   try {
     searchError.value = null
-    const posts = await api.search({
+    const { posts, dropped } = await api.search({
       tags: apiTags,
       page: 0,
       ratings,
     })
     applySearchResults(posts, false)
+    droppedTerms.value = dropped
   } catch (err) {
     searchError.value = err instanceof Error ? err.message : 'Search failed'
     console.error('Search failed:', err)
@@ -165,7 +175,7 @@ async function loadMore() {
   try {
     searchError.value = null
     const apiTags = stripDurationTags(searchTags.value)
-    const posts = await api.search({
+    const { posts } = await api.search({
       tags: apiTags,
       page: currentPage.value,
       ratings: searchRatings.value,
@@ -197,6 +207,23 @@ async function loadMore() {
         @click:close="searchError = null"
       >
         {{ searchError }}
+      </v-alert>
+
+      <!-- Filters the active source could not honor -->
+      <v-alert
+        v-if="droppedTerms.length"
+        type="warning"
+        variant="tonal"
+        closable
+        class="search-error mb-4"
+        @click:close="droppedTerms = []"
+      >
+        <div class="dropped-heading">Not applied by this source:</div>
+        <ul class="dropped-list">
+          <li v-for="(d, i) in droppedTerms" :key="i">
+            <code>{{ d.term }}</code> — {{ d.reason }}
+          </li>
+        </ul>
       </v-alert>
 
       <!-- Duration probing indicator -->
@@ -257,5 +284,14 @@ async function loadMore() {
 .search-error {
   max-width: 1200px;
   margin: 0 auto 8px;
+}
+.dropped-heading {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.dropped-list {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 13px;
 }
 </style>

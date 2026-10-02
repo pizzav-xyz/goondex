@@ -1,7 +1,9 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useVModel } from '@vueuse/core'
 import { ACCENT_PALETTE, useSettingsStore } from '@/stores/settings'
-import type { AccentColorId, ThemeMode, WatchedMode } from '@/types'
+import { registeredSources, useActiveSource } from '@/sources/registry'
+import type { AccentColorId, SourceId, ThemeMode, WatchedMode } from '@/types'
 
 const props = defineProps<{
   modelValue: boolean
@@ -25,6 +27,13 @@ const WATCHED_MODES: { value: WatchedMode; label: string }[] = [
   { value: 'dim', label: 'Dim watched' },
   { value: 'hide', label: 'Hide watched' },
 ]
+
+const activeSourceNote = computed(() => {
+  const caps = useActiveSource().value.capabilities
+  return caps.nativeDateFilter
+    ? 'Supports native date filters such as date:week.'
+    : 'No native date filter — date: is resolved by scanning page ids.'
+})
 </script>
 
 <template>
@@ -90,22 +99,31 @@ const WATCHED_MODES: { value: WatchedMode; label: string }[] = [
           </v-btn>
         </div>
 
-        <!-- Safe Mode -->
-        <div class="d-flex align-center justify-space-between mb-4">
-          <div>
-            <div class="text-body-2">Safe mode</div>
-            <div class="text-caption text-medium-emphasis">Filter explicit results</div>
-          </div>
-          <v-switch
-            :model-value="settings.safeMode"
-            color="primary"
-            density="compact"
-            hide-details
-            @update:model-value="settings.setSafeMode(!!$event)"
-          />
-        </div>
-
         <v-divider class="mb-4" />
+
+        <!-- Source -->
+        <div class="text-caption text-medium-emphasis mb-2">Source</div>
+        <v-btn-toggle
+          :model-value="settings.activeSource"
+          mandatory
+          density="comfortable"
+          color="primary"
+          class="mb-2"
+          @update:model-value="settings.setActiveSource($event as SourceId)"
+        >
+          <v-btn
+            v-for="source in registeredSources"
+            :key="source.id"
+            :value="source.id"
+            variant="outlined"
+            size="small"
+          >
+            {{ source.label }}
+          </v-btn>
+        </v-btn-toggle>
+        <div class="text-caption text-medium-emphasis mb-4">
+          {{ activeSourceNote }}
+        </div>
 
         <!-- Watched Mode -->
         <div class="text-caption text-medium-emphasis mb-2">Watched posts</div>

@@ -1,6 +1,7 @@
 import { ref } from 'vue'
 import type { Post } from '@/types'
 import { MAX_CONCURRENT_BUFFER } from '@/config'
+import { isVideo, getMediaUrl } from '@/sources/media'
 
 /** Global buffer state shared across components */
 const buffer = new Map<number, string>() // post ID → blob URL
@@ -8,20 +9,11 @@ const buffering = ref(false)
 const bufferedCount = ref(0)
 let abortController: AbortController | null = null
 
-function isVideo(post: Post): boolean {
-  return post.fileExt === 'webm' || post.fileExt === 'mp4'
-}
-
-function getVideoUrl(post: Post): string | null {
-  if (!isVideo(post)) return null
-  return post.fileUrl || post.sampleUrl || null
-}
-
 async function fetchOne(post: Post, signal: AbortSignal): Promise<void> {
   const id = post.id
   if (buffer.has(id)) return
 
-  const url = getVideoUrl(post)
+  const url = getMediaUrl(post)
   if (!url) return
 
   const proxyUrl = `/api/video?url=${encodeURIComponent(url)}`

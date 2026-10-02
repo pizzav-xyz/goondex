@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onUnmounted } from 'vue'
 import { useVideoBuffer } from '@/composables/useVideoBuffer'
+import { isVideo, getMediaUrl } from '@/sources/media'
 import type { Post } from '@/types'
 
 const { getBufferedUrl } = useVideoBuffer()
@@ -58,16 +59,15 @@ const navigableTotal = computed(() => {
   if (!skipWatched.value) return props.posts.length
   return props.posts.filter(p => !props.isWatched(p)).length
 })
-const isVideo = computed(() => post.value?.fileExt === 'webm' || post.value?.fileExt === 'mp4')
+const isVideoPost = computed(() => (post.value ? isVideo(post.value) : false))
 const mediaUrl = computed(() => {
   if (!post.value) return ''
-  if (isVideo.value) {
+  if (isVideoPost.value) {
     // Prefer cached blob URL for instant playback
     const cached = getBufferedUrl(post.value)
     if (cached) return cached
-    return post.value.fileUrl || post.value.sampleUrl
   }
-  return post.value.fileUrl || post.value.sampleUrl || post.value.previewUrl
+  return getMediaUrl(post.value)
 })
 const aspectRatio = computed(() => {
   if (!post.value || !post.value.width || !post.value.height) return 1
@@ -181,7 +181,7 @@ onUnmounted(() => {
             <v-icon>chevron_left</v-icon>
           </button>
 
-          <video v-if="isVideo" ref="videoRef" class="lightbox-media" controls autoplay loop playsinline :src="mediaUrl ?? ''" :style="mediaStyle" />
+          <video v-if="isVideoPost" ref="videoRef" class="lightbox-media" controls autoplay loop playsinline :src="mediaUrl ?? ''" :style="mediaStyle" />
           <img v-else class="lightbox-media" :src="mediaUrl ?? ''" :alt="post.tags.join(' ')" :style="mediaStyle" />
 
           <button class="lightbox-nav-btn next" :disabled="nextDisabled" @click="nav(1)">

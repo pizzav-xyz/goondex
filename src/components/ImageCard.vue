@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
+import { isVideo, getThumbnailUrl } from '@/sources/media'
 import type { Post } from '@/types'
 
 const props = defineProps<{
@@ -12,21 +13,60 @@ const emit = defineEmits<{
   click: [post: Post]
 }>()
 
-const img = computed(() => props.post.sampleUrl || props.post.previewUrl || '')
+const img = computed(() => getThumbnailUrl(props.post) ?? '')
 const tags = computed(() => props.post.tags.slice(0, 6))
-const isVideo = computed(() => props.post.fileExt === 'webm' || props.post.fileExt === 'mp4')
+const isVideoPost = computed(() => isVideo(props.post))
 const isDimmed = computed(() => props.watched && props.watchedMode === 'dim')
-const imgFailed = ref(false)
+
+/** 0 = first attempt, 1 = one retry, 2 = given up. */
+const attempt = ref(0)
+
+const imgSrc = computed(() => {
+  const base = img.value
+  if (!base || attempt.value === 0) return base
+  return `${base}${base.includes('?') ? '&' : '?'}_r=${attempt.value}`
+})
 
 function onImgError() {
-  imgFailed.value = true
+  attempt.value += 1
 }
+
+const imgExhausted = computed(() => !img.value || attempt.value > 1)
+
+function retryImage() {
+  attempt.value = 0
+}
+
+watch(
+  () => props.post.id,
+  () => {
+    attempt.value = 0
+  },
+)
 </script>
 
 <template>
   <div class="image-card" :class="{ 'image-card-watched': isDimmed }" @click="emit('click', post)">
-    <img v-if="!imgFailed" :src="img" alt="" loading="lazy" @error="onImgError" />
-    <div v-if="isVideo" class="image-card-play">
+    <img
+      v-if="imgSrc && !imgExhausted"
+      :src="imgSrc"
+      alt=""
+      loading="lazy"
+      @error="onImgError"
+    />
+    <div v-else class="image-card-fallback">
+      <v-icon icon="broken_image" size="32" color="grey-darken-1" />
+      <span class="image-card-fallback-label">Image unavailable</span>
+      <v-btn
+        v-if="img"
+        size="x-small"
+        variant="text"
+        @click.stop="retryImage"
+      >
+        Retry
+      </v-btn>
+    </div>
+    <div v-if="isVideoPost" class="image-card-play">
       <v-icon icon="play_circle" size="48" color="white" />
     </div>
     <div v-if="watched && watchedMode === 'dim'" class="image-card-watched-badge">
@@ -42,7 +82,7 @@ function onImgError() {
     >
       {{ post.rating }}
     </span>
-    <span v-if="isVideo" class="image-card-ext">{{ post.fileExt?.toUpperCase() }}</span>
+    <span v-if="isVideoPost" class="image-card-ext">{{ post.fileExt?.toUpperCase() }}</span>
     <div class="image-card-overlay">
       <div class="image-card-tags">
         <span v-for="t in tags" :key="t" class="image-card-tag">{{ t }}</span>
@@ -95,6 +135,23 @@ function onImgError() {
   height: 100%;
   object-fit: cover;
   display: block;
+}
+
+.image-card-fallback {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+  height: 100%;
+  padding: 8px;
+  text-align: center;
+}
+
+.image-card-fallback-label {
+  font-size: 11px;
+  color: rgb(var(--v-theme-on-surface-variant));
 }
 
 .image-card-overlay {
