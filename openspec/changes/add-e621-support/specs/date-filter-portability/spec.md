@@ -268,3 +268,25 @@ trusted on the strength of its declared capability.
 - **WHEN** a source declares `nativeDateFilter`
 - **THEN** that declaration SHALL NOT by itself be treated as proof the term is
   honored, and the verification above SHALL be performed against the live API
+
+### Requirement: Ordering Parameters Are Verified Against Live Results
+
+A translated ordering parameter SHALL be confirmed to actually order results as
+the mapping claims, and not merely accepted with HTTP 200. A silently ignored
+ordering term is indistinguishable from an applied one by status code alone.
+
+#### Scenario: Creation-order mapping is confirmed live
+
+- **WHEN** `sort:date` is translated to `order:created_desc` and sent to the
+  source
+- **THEN** the returned page SHALL be monotonically ordered by creation time in
+  that direction, and the ascending form SHALL reach genuinely older posts
+  (Verified 2026-10-01: `order:created_desc` returned 8 posts descending from
+  `2026-10-02T17:01:18`; `order:created_asc` reached `2007-02-10`, id 14)
+
+#### Scenario: Order parameter forms are distinguished from silent zeros
+
+- **WHEN** an ordering term is emitted
+- **THEN** the underscore suffix form SHALL be used, since the space and colon
+  forms return zero results rather than an error, making the mistake invisible
+  to any check that only asserts a successful response
