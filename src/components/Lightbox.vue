@@ -9,7 +9,7 @@ const props = defineProps<{
   modelValue: boolean
   currentPost: Post | null
   posts: Post[]
-  isWatched: (id: number) => boolean
+  isWatched: (post: Post) => boolean
   watchedMode: 'show' | 'dim' | 'hide'
 }>()
 
@@ -36,7 +36,7 @@ const index = computed(() => {
 function findNavEdge(dir: number): number {
   let idx = index.value + dir
   if (skipWatched.value) {
-    while (idx >= 0 && idx < props.posts.length && props.isWatched(props.posts[idx].id!)) {
+    while (idx >= 0 && idx < props.posts.length && props.isWatched(props.posts[idx]!)) {
       idx += dir
     }
   }
@@ -50,24 +50,24 @@ const navigableIndex = computed(() => {
   if (!skipWatched.value || index.value < 0) return index.value
   let count = 0
   for (let i = 0; i < index.value; i++) {
-    if (!props.isWatched(props.posts[i].id!)) count++
+    if (!props.isWatched(props.posts[i]!)) count++
   }
   return count
 })
 const navigableTotal = computed(() => {
   if (!skipWatched.value) return props.posts.length
-  return props.posts.filter(p => !props.isWatched(p.id!)).length
+  return props.posts.filter(p => !props.isWatched(p)).length
 })
-const isVideo = computed(() => post.value?.file_ext === 'webm' || post.value?.file_ext === 'mp4')
+const isVideo = computed(() => post.value?.fileExt === 'webm' || post.value?.fileExt === 'mp4')
 const mediaUrl = computed(() => {
   if (!post.value) return ''
   if (isVideo.value) {
     // Prefer cached blob URL for instant playback
     const cached = getBufferedUrl(post.value)
     if (cached) return cached
-    return post.value.file_url || post.value.sample_url
+    return post.value.fileUrl || post.value.sampleUrl
   }
-  return post.value.file_url || post.value.sample_url || post.value.preview_url
+  return post.value.fileUrl || post.value.sampleUrl || post.value.previewUrl
 })
 const aspectRatio = computed(() => {
   if (!post.value || !post.value.width || !post.value.height) return 1
@@ -83,15 +83,15 @@ const mediaStyle = computed(() => {
   }
   return { maxHeight: '85vh', maxWidth: '100%' }
 })
-const tags = computed(() => (post.value?.tags || '').split(' ').filter(Boolean))
-const watched = computed(() => post.value ? props.isWatched(post.value.id!) : false)
+const tags = computed(() => post.value?.tags ?? [])
+const watched = computed(() => post.value ? props.isWatched(post.value) : false)
 const meta = computed(() => {
   if (!post.value) return []
   const items: Array<{ label: string; value: string; domain?: string }> = []
   if (post.value.score != null) items.push({ label: 'Score', value: String(post.value.score) })
   if (post.value.rating) items.push({ label: 'Rating', value: post.value.rating })
-  if (post.value.source) {
-    let url = post.value.source
+  if (post.value.sourceUrl) {
+    let url = post.value.sourceUrl
     if (!/^https?:\/\//.test(url)) url = 'https://' + url
     let domain = ''
     try { domain = new URL(url).hostname } catch {}
@@ -181,8 +181,8 @@ onUnmounted(() => {
             <v-icon>chevron_left</v-icon>
           </button>
 
-          <video v-if="isVideo" ref="videoRef" class="lightbox-media" controls autoplay loop playsinline :src="mediaUrl" :style="mediaStyle" />
-          <img v-else class="lightbox-media" :src="mediaUrl" :alt="post.tags || ''" :style="mediaStyle" />
+          <video v-if="isVideo" ref="videoRef" class="lightbox-media" controls autoplay loop playsinline :src="mediaUrl ?? ''" :style="mediaStyle" />
+          <img v-else class="lightbox-media" :src="mediaUrl ?? ''" :alt="post.tags.join(' ')" :style="mediaStyle" />
 
           <button class="lightbox-nav-btn next" :disabled="nextDisabled" @click="nav(1)">
             <v-icon>chevron_right</v-icon>

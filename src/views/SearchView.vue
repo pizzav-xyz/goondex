@@ -11,7 +11,7 @@ import { useVideoDuration } from '@/composables/useVideoDuration'
 import { useVideoBuffer } from '@/composables/useVideoBuffer'
 import { PAGE_SIZE } from '@/api/client'
 import { useSettingsStore } from '@/stores/settings'
-import { useWatchedStore } from '@/stores/watched'
+import { useWatchedStore, watchedKey } from '@/stores/watched'
 import { parseDurationFilter, stripDurationTags, filterByDuration } from '@/utils/durationFilter'
 import type { Post } from '@/types'
 
@@ -48,7 +48,7 @@ const searchError = ref<string | null>(null)
 
 // Watched state
 const watchedMode = computed(() => settings.watchedMode)
-const watchedIds = computed(() => watched.watchedIds)
+const watchedKeys = computed(() => watched.watchedKeys)
 
 /** Whether the API returned a full page (i.e. more pages likely exist). */
 const apiHasMore = computed(() => allPosts.value.length >= (currentPage.value + 1) * PAGE_SIZE)
@@ -57,7 +57,7 @@ const apiHasMore = computed(() => allPosts.value.length >= (currentPage.value + 
 const hasMore = computed(() => {
   if (!apiHasMore.value) return false
   if (watchedMode.value !== 'hide') return true
-  const visibleCount = allPosts.value.filter(p => !watchedIds.value.has(p.id!)).length
+  const visibleCount = allPosts.value.filter(p => !watchedKeys.value.has(watchedKey(p.source, p.id!))).length
   return visibleCount < PAGE_SIZE
 })
 
@@ -208,7 +208,7 @@ async function loadMore() {
         :total-count="allPosts.length"
         :posts="allPosts"
         :watched-mode="watchedMode"
-        :watched-ids="watchedIds"
+        :watched-keys="watchedKeys"
       />
 
       <ImageGrid
@@ -216,7 +216,7 @@ async function loadMore() {
         :loading="allPosts.length === 0 && currentPage === 0"
         :has-more="hasMore"
         :watched-mode="watchedMode"
-        :watched-ids="watchedIds"
+        :watched-keys="watchedKeys"
         @card-click="openLightbox"
         @load-more="loadMore"
       />

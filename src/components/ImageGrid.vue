@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { useIntersectionObserver } from '@vueuse/core'
 import ImageCard from './ImageCard.vue'
 import { ROOT_MARGIN, SKELETON_COUNT } from '@/config'
+import { watchedKey } from '@/stores/watched'
 import type { Post } from '@/types'
 
 const props = defineProps<{
@@ -10,7 +11,7 @@ const props = defineProps<{
   loading: boolean
   hasMore: boolean
   watchedMode: 'show' | 'dim' | 'hide'
-  watchedIds: Set<number>
+  watchedKeys: Set<string>
 }>()
 
 const emit = defineEmits<{
@@ -35,7 +36,7 @@ function handleCardClick(post: Post) {
 }
 
 function isHidden(post: Post): boolean {
-  return props.watchedMode === 'hide' && props.watchedIds.has(post.id!)
+  return props.watchedMode === 'hide' && props.watchedKeys.has(watchedKey(post.source, post.id!))
 }
 </script>
 
@@ -55,9 +56,9 @@ function isHidden(post: Post): boolean {
       <ImageCard
         v-for="post in posts"
         v-show="!isHidden(post)"
-        :key="post.id ?? post.preview_url"
+        :key="post.id || post.previewUrl || ''"
         :post="post"
-        :watched="watchedIds.has(post.id!)"
+        :watched="watchedKeys.has(watchedKey(post.source, post.id!))"
         :watched-mode="watchedMode"
         @click="handleCardClick(post)"
       />

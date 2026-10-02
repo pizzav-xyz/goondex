@@ -19,7 +19,7 @@ export function useLightbox({ api, watched, searchBarRef }: UseLightboxOptions) 
     lightboxPost.value = { ...post }
     lightboxPosts.value = all
     showLightbox.value = true
-    watched.addWatched(post.id!)
+    watched.addWatched(post.source, post.id)
     watched.setLightboxPost(post, null)
   }
 
@@ -39,15 +39,15 @@ export function useLightbox({ api, watched, searchBarRef }: UseLightboxOptions) 
 
   function handleLightboxOpen(post: Post) {
     lightboxPost.value = { ...post }
-    watched.addWatched(post.id!)
+    watched.addWatched(post.source, post.id)
   }
 
   function handleToggleWatch(post: Post) {
-    watched.toggleWatched(post.id!)
+    watched.toggleWatched(post.source, post.id)
   }
 
-  function isWatched(postId: number): boolean {
-    return watched.isWatched(postId)
+  function isWatched(post: Post): boolean {
+    return watched.isWatched(post.source, post.id)
   }
 
   async function fetchPostDetails(id: number) {

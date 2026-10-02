@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useVideoBuffer } from '@/composables/useVideoBuffer'
+import { watchedKey } from '@/stores/watched'
 import type { Post } from '@/types'
 
 const props = defineProps<{
@@ -10,8 +11,8 @@ const props = defineProps<{
   posts: Post[]
   /** Current watched mode */
   watchedMode: 'show' | 'dim' | 'hide'
-  /** Set of watched post IDs */
-  watchedIds: Set<number>
+  /** Set of watched source:id keys */
+  watchedKeys: Set<string>
 }>()
 
 const { buffering, bufferedCount, bufferVideos, cancelBuffer } = useVideoBuffer()
@@ -31,7 +32,7 @@ async function handleBuffer() {
   } else {
     // Filter out watched posts when in hide mode
     const toBuffer = props.watchedMode === 'hide'
-      ? props.posts.filter(p => p.id != null && !props.watchedIds.has(p.id))
+      ? props.posts.filter(p => !props.watchedKeys.has(watchedKey(p.source, p.id)))
       : props.posts
     await bufferVideos(toBuffer, bufferCountNum.value)
   }
