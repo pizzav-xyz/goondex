@@ -3,6 +3,12 @@ import { createPinia, setActivePinia } from 'pinia'
 import { nextTick } from 'vue'
 import { useWatchedStore } from '@/stores/watched'
 
+/**
+ * The literal key, not the store's exported constant. The trawl-comb rename
+ * deliberately left `r34_watched` unchanged so existing users keep their
+ * watchlist; these tests are what fail if a future "cleanup" renames the key
+ * and silently discards the one piece of user data that cannot be rebuilt.
+ */
 const KEY = 'r34_watched'
 
 describe('watched store source scoping', () => {

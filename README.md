@@ -1,6 +1,6 @@
-# r34
+# trawl-comb
 
-A fast, modern client for the Rule34 API. Built with Vue 3, Vuetify 3, and TypeScript.
+A fast, modern client for Rule34 and e621. Built with Vue 3, Vuetify 3, and TypeScript.
 
 ## Features
 
@@ -31,8 +31,8 @@ A fast, modern client for the Rule34 API. Built with Vue 3, Vuetify 3, and TypeS
 ### Setup
 
 ```bash
-git clone https://github.com/pizzav-xyz/r34.git
-cd r34
+git clone https://github.com/pizzav-xyz/trawl-comb.git
+cd trawl-comb
 npm install
 ```
 
@@ -42,6 +42,11 @@ Create a `.env` file:
 R34_API_KEY=your_api_key
 R34_USER_ID=your_user_id
 ```
+
+The `R34_` prefix is historical and intentionally unchanged: these names are
+part of every existing deployment's configuration, and `localStorage` keys
+keep the prefix for the same reason. Renaming either would break upgrades
+silently.
 
 ### Development
 

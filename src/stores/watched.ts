@@ -4,6 +4,12 @@ import { clearWithTtl, readWithTtl, writeWithTtl } from '@/constants/dev'
 import type { Post } from '@/types'
 import { DEFAULT_SOURCE_ID, isSourceId, type SourceId } from '@/sources/types'
 
+/**
+ * The `r34_` prefix is intentionally historical and must NOT be "corrected"
+ * to match the project name. The watchlist is the one piece of user data that
+ * cannot be regenerated: renaming these keys would silently discard every
+ * entry an existing user has accumulated.
+ */
 const KEY_WATCHED = 'r34_watched'
 const KEY_LIGHTBOX_POST = 'r34_lightbox_post'
 const KEY_LIGHTBOX_POST_TS = 'r34_lightbox_post_ts'

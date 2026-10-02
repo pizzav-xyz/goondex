@@ -239,3 +239,32 @@ Date terms SHALL be recognized in the same user-facing syntax regardless of acti
 
 - **WHEN** a date term uses an unrecognized unit or form
 - **THEN** the system SHALL reject it and SHALL NOT silently treat it as an ordinary tag
+
+### Requirement: Native Date Filtering Is Verified, Not Assumed
+
+A source that declares a native `date:` operator SHALL be confirmed to actually
+apply it, so that a source silently ignoring the term is caught rather than
+trusted on the strength of its declared capability.
+
+#### Scenario: Out-of-range native date window returns nothing
+
+- **WHEN** a search is issued against a native-date source with a date window
+  that no post can satisfy, such as a `date:week` filter combined with an
+  `id:` bound far below the newest id
+- **THEN** the source SHALL return zero posts, demonstrating the date term was
+  applied rather than ignored (Verified 2026-10-01: `date:week` → 0 posts,
+  `date:year` → 5 posts over the same id window)
+
+#### Scenario: Documented relative forms behave as documented
+
+- **WHEN** a relative date form is issued against a native-date source
+- **THEN** its singular and plural spellings SHALL return identical result
+  counts, and a bare number SHALL be interpreted as that many days ago
+  (Verified 2026-10-01: `date:30days` and `date:30day` both returned 0 over
+  the same id window)
+
+#### Scenario: Capability declaration is not sufficient evidence
+
+- **WHEN** a source declares `nativeDateFilter`
+- **THEN** that declaration SHALL NOT by itself be treated as proof the term is
+  honored, and the verification above SHALL be performed against the live API

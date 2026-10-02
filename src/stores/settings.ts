@@ -9,6 +9,12 @@ import { DEFAULT_SOURCE_ID, isSourceId } from '@/sources/types'
 
 export { ACCENT_PALETTE }
 
+/**
+ * The `r34_` prefix is intentionally historical and must NOT be "corrected"
+ * to match the project name. The project is now trawl-comb, but these keys
+ * are user data: renaming them would silently orphan every existing user's
+ * settings on upgrade.
+ */
 const KEYS = {
   THEME: 'r34_theme',
   ACCENT: 'r34_accent',
