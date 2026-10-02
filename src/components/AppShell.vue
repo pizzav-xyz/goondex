@@ -42,7 +42,7 @@ function cycleWatchedMode() {
     <v-app-bar color="surface" flat>
       <v-app-bar-title class="app-title">
         <v-icon icon="explore" color="primary" class="mr-2" />
-        rule34
+        <span class="app-name">trawl-comb</span>
         <v-chip
           size="x-small"
           variant="tonal"
