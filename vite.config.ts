@@ -2,6 +2,7 @@ import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
 import { readFileSync, existsSync } from 'fs';
 import { resolve } from 'path';
+import { SITE_NAME } from './src/constants/site';
 
 function getProxyPort() {
   const portFile = resolve(__dirname, '.proxy-port');
@@ -16,27 +17,47 @@ function getProxyPort() {
 const proxyPort = getProxyPort();
 
 /**
- * The dev-only loopback exception. `connect-src http://127.0.0.1:*` exists so
- * the Vite dev server can reach the local proxy; a shipped production build
- * talks only to same-origin `/api` and must not permit connections to any
- * loopback port, so the exception is stripped at build time here.
+ * The token index.html carries in its <title>; it is replaced with SITE_NAME so
+ * the document title and the app bar can never disagree.
  */
-function devCspPlugin() {
+const SITE_NAME_TOKEN = '%SITE_NAME%';
+
+/**
+ * Post-processes index.html on its way to the browser. Two jobs, both
+ * template-literal substitutions that cannot silently no-op:
+ *
+ * 1. Fill the title placeholder with the site name.
+ * 2. Strip the dev-only loopback CSP exception. `connect-src
+ *    http://127.0.0.1:*` exists so the Vite dev server can reach the local
+ *    proxy; a shipped production build talks only to same-origin `/api` and must
+ *    not permit connections to any loopback port, so it is removed at build
+ *    time.
+ */
+function indexHtmlPlugin() {
   return {
-    name: 'strip-dev-csp-exception',
+    name: 'index-html-substitutions',
     transformIndexHtml(html: string, ctx: { server?: unknown }) {
-      if (ctx.server) return html
-      return html.replace(' http://127.0.0.1:* http://localhost:*', '')
+      if (!html.includes(SITE_NAME_TOKEN)) {
+        throw new Error(
+          `index.html is missing the ${SITE_NAME_TOKEN} title placeholder; ` +
+            'the site name has no other source, so the title would ship empty.',
+        );
+      }
+      let out = html.replace(SITE_NAME_TOKEN, SITE_NAME);
+      if (!ctx.server) {
+        out = out.replace(' http://127.0.0.1:* http://localhost:*', '');
+      }
+      return out;
     },
   };
 }
 
-export { devCspPlugin }
+export { indexHtmlPlugin }
 
 export default defineConfig({
   root: '.',
   envPrefix: 'R34_',
-  plugins: [vue(), devCspPlugin()],
+  plugins: [vue(), indexHtmlPlugin()],
   resolve: {
     alias: {
       '@': resolve(__dirname, './src'),

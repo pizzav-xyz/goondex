@@ -10,7 +10,7 @@ import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { rule34Adapter } from '@/sources/rule34'
 import { e621Adapter } from '@/sources/e621'
-import { devCspPlugin } from '../../../vite.config'
+import { indexHtmlPlugin } from '../../../vite.config'
 
 const indexHtml = readFileSync(resolve(__dirname, '../../../index.html'), 'utf-8')
 
@@ -59,7 +59,7 @@ describe('index.html CSP covers every declared media host', () => {
 })
 
 describe('the loopback connect-src exception is dev-only', () => {
-  const plugin = devCspPlugin() as unknown as {
+  const plugin = indexHtmlPlugin() as unknown as {
     transformIndexHtml: (html: string, ctx: { server?: unknown }) => string
   }
   const devHtml = indexHtml

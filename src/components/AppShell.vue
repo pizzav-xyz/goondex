@@ -4,6 +4,7 @@ import { useSettingsStore } from '@/stores/settings'
 import { useActiveSource } from '@/sources/registry'
 import { useTheme } from '@/composables/useTheme'
 import { WATCHED_MODES } from '@/types'
+import { SITE_NAME } from '@/constants/site'
 
 const emit = defineEmits<{
   'open-settings': []
@@ -42,7 +43,7 @@ function cycleWatchedMode() {
     <v-app-bar color="surface" flat>
       <v-app-bar-title class="app-title">
         <v-icon icon="explore" color="primary" class="mr-2" />
-        <span class="app-name">trawl-comb</span>
+        <span class="app-name">{{ SITE_NAME }}</span>
         <v-chip
           size="x-small"
           variant="tonal"
