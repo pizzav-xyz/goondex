@@ -32,12 +32,21 @@ const FIXTURE_DIR = join(
 const fixture = (name: string): string =>
   readFileSync(join(FIXTURE_DIR, name), 'utf8')
 
-/** The URL the adapter requested, with its query parsed. */
-function lastRequest(): { path: string; params: URLSearchParams } {
+/**
+ * The URL the adapter requested, with its query parsed. The `/e621` routing
+ * prefix is stripped from `path` so the assertions below read as upstream
+ * paths; `routedPath` keeps the prefix visible where routing itself is under
+ * test.
+ */
+function lastRequest(): { path: string; routedPath: string; params: URLSearchParams } {
   const calls = fetchMock.mock.calls
   const url = calls[calls.length - 1][0] as string
-  const [path, query] = url.split('?')
-  return { path, params: new URLSearchParams(query ?? '') }
+  const [routedPath, query] = url.split('?')
+  return {
+    routedPath,
+    path: routedPath.replace(/^\/e621/, ''),
+    params: new URLSearchParams(query ?? ''),
+  }
 }
 
 beforeEach(() => {
@@ -52,6 +61,23 @@ describe('search request shape', () => {
   it('uses the posts.json route', async () => {
     await e621Adapter.search({ query: 'solo', page: 0, limit: 100 })
     expect(lastRequest().path).toBe('/posts.json')
+  })
+
+  // Named regression: the proxy derives the upstream board from the path
+  // prefix, and `/api/posts.json` is the Rule34 route. Omitting `/e621` sends
+  // every e621 request to Rule34, which answers 404 — the failure surfaces as
+  // an empty search, not as a wrong-source warning, so it is invisible without
+  // asserting the prefix.
+  it('routes every request through the /e621 path prefix', async () => {
+    await e621Adapter.search({ query: 'solo', page: 0, limit: 100 })
+    expect(lastRequest().routedPath).toBe('/e621/posts.json')
+
+    await e621Adapter.autocomplete('so')
+    expect(lastRequest().routedPath).toBe('/e621/tags.json')
+
+    fetchMock.mockResolvedValue(fixture('e621_post_detail.json'))
+    await e621Adapter.postDetail(6749715)
+    expect(lastRequest().routedPath).toBe('/e621/posts/6749715.json')
   })
 
   // Named regression: the default page size is 75, so omitting `limit` silently

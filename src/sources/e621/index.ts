@@ -140,7 +140,10 @@ class E621Adapter implements SourceAdapter {
     let text: string
     try {
       text = await queue.add(() =>
-        this.#fetch<string, 'text'>(`${path}?${queryString}`, { responseType: 'text' }),
+        this.#fetch<string, 'text'>(
+          `/e621${path}?${queryString}`,
+          { responseType: 'text' },
+        ),
       )
     } catch (error) {
       throw classifyRequestError(error)
