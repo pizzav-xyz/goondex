@@ -165,6 +165,14 @@ function addTagAndSearch(tag: string) {
         </button>
         <span>Videos between <b>30 and 60</b> seconds.</span>
       </div>
+      <div class="syntax-row syntax-note">
+        <span>
+          Durations are probed in your browser, so <b>posts with no known
+          duration — including images — are excluded</b> while a duration filter
+          is active. This is deliberate: an unknown duration cannot satisfy any
+          comparison.
+        </span>
+      </div>
     </div>
 
     <!-- Sorting Section -->
@@ -235,6 +243,13 @@ function addTagAndSearch(tag: string) {
   font-size: 13px;
   color: var(--md-on-surface-variant);
   line-height: 1.5;
+}
+
+.syntax-note {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--md-outline-variant);
+  font-size: 12px;
 }
 
 .syntax-row code {

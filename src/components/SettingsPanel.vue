@@ -28,8 +28,7 @@ const WATCHED_MODES: { value: WatchedMode; label: string }[] = [
   { value: 'hide', label: 'Hide watched' },
 ]
 
-const activeSourceNote = computed(() => {
-  const caps = useActiveSource().value.capabilities
+const activeSourceNote = computed(() => {  const caps = useActiveSource().value.capabilities
   return caps.nativeDateFilter
     ? 'Supports native date filters such as date:week.'
     : 'No native date filter — date: is resolved by scanning page ids.'

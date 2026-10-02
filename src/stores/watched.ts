@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { computed, ref, watch } from 'vue'
-import { DEV_TTL } from '@/constants/dev'
+import { clearWithTtl, readWithTtl, writeWithTtl } from '@/constants/dev'
 import type { Post } from '@/types'
 import { DEFAULT_SOURCE_ID, isSourceId, type SourceId } from '@/sources/types'
 
@@ -90,27 +90,15 @@ export const useWatchedStore = defineStore('watched', () => {
   }
 
   function getLightboxPost(): LightboxSaved | null {
-    if (!import.meta.env.DEV) return null
-    try {
-      const ts = Number(localStorage.getItem(KEY_LIGHTBOX_POST_TS))
-      if (!ts || Date.now() - ts > DEV_TTL) {
-        localStorage.removeItem(KEY_LIGHTBOX_POST)
-        localStorage.removeItem(KEY_LIGHTBOX_POST_TS)
-        return null
-      }
-      return JSON.parse(localStorage.getItem(KEY_LIGHTBOX_POST) || 'null')
-    } catch { return null }
+    return readWithTtl<LightboxSaved>(KEY_LIGHTBOX_POST, KEY_LIGHTBOX_POST_TS)
   }
 
   function setLightboxPost(post: Post, playbackTime: number | null) {
-    if (!import.meta.env.DEV) return
-    localStorage.setItem(KEY_LIGHTBOX_POST, JSON.stringify({ post, _playbackTime: playbackTime }))
-    localStorage.setItem(KEY_LIGHTBOX_POST_TS, String(Date.now()))
+    writeWithTtl(KEY_LIGHTBOX_POST, KEY_LIGHTBOX_POST_TS, { post, _playbackTime: playbackTime })
   }
 
   function clearLightboxPost() {
-    localStorage.removeItem(KEY_LIGHTBOX_POST)
-    localStorage.removeItem(KEY_LIGHTBOX_POST_TS)
+    clearWithTtl(KEY_LIGHTBOX_POST, KEY_LIGHTBOX_POST_TS)
   }
 
   return {

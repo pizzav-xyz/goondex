@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { useSettingsStore } from '@/stores/settings'
 import { useActiveSource } from '@/sources/registry'
 import { useTheme } from '@/composables/useTheme'
+import { WATCHED_MODES } from '@/types'
 
 const emit = defineEmits<{
   'open-settings': []
@@ -12,7 +13,6 @@ const settings = useSettingsStore()
 const { cycleTheme } = useTheme()
 const activeSource = computed(() => useActiveSource().value)
 
-const WATCHED_MODES = ['show', 'dim', 'hide'] as const
 const WATCHED_ICONS: Record<string, string> = {
   show: 'visibility',
   dim: 'visibility',

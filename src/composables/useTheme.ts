@@ -2,8 +2,7 @@ import { computed, watchEffect } from 'vue'
 import { useTheme as useVuetifyTheme } from 'vuetify'
 import { ACCENT_PALETTE, useSettingsStore } from '@/stores/settings'
 import type { AccentColorVariant, ThemeMode } from '@/types'
-
-const THEMES: readonly ThemeMode[] = ['system', 'light', 'dark'] as const
+import { THEME_MODES } from '@/types'
 
 function hexToRgb(hex: string) {
   const normalized = hex.replace('#', '')
@@ -51,8 +50,8 @@ export function useTheme() {
   }
 
   function cycleTheme() {
-    const idx = THEMES.indexOf(settings.theme)
-    const next = THEMES[(idx + 1) % THEMES.length]
+    const idx = THEME_MODES.indexOf(settings.theme)
+    const next = THEME_MODES[(idx + 1) % THEME_MODES.length]
     settings.setTheme(next)
     vuetifyTheme.global.name.value = resolveThemeName(next)
   }

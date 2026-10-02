@@ -73,10 +73,14 @@ const hasMore = computed(() => {
 })
 
 let activeDurationConditions = parseDurationFilter('')
+/** Bumped on every new search; a probe completion from an older search must
+ * not rewrite the results of the newer query. */
+let searchGeneration = 0
 
 /** Apply duration filter using the probed duration map. */
-function applyDurationFilter() {
+function applyDurationFilter(generation: number) {
   if (!hasDurationFilter.value) return
+  if (generation !== searchGeneration) return
   allPosts.value = filterByDuration(rawPosts.value, activeDurationConditions, durationMap.value)
 }
 
@@ -86,8 +90,9 @@ function applySearchResults(posts: Post[], append: boolean) {
   if (!hasDurationFilter.value) {
     allPosts.value = rawPosts.value
   } else {
+    const generation = searchGeneration
     allPosts.value = append ? [...allPosts.value, ...posts] : posts
-    probeDurations(posts).then(() => applyDurationFilter())
+    probeDurations(posts).then(() => applyDurationFilter(generation))
   }
 }
 
@@ -136,6 +141,9 @@ async function doSearch(tags: string, ratings: string[]) {
   searchRatings.value = ratings
   currentPage.value = 0
   allPosts.value = []
+  rawPosts.value = []
+  searchGeneration++
+  clearBuffer()
 
   // Persist in dev mode
   settings.setSearchState({ tags, ratings })

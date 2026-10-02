@@ -15,10 +15,28 @@ function getProxyPort() {
 
 const proxyPort = getProxyPort();
 
+/**
+ * The dev-only loopback exception. `connect-src http://127.0.0.1:*` exists so
+ * the Vite dev server can reach the local proxy; a shipped production build
+ * talks only to same-origin `/api` and must not permit connections to any
+ * loopback port, so the exception is stripped at build time here.
+ */
+function devCspPlugin() {
+  return {
+    name: 'strip-dev-csp-exception',
+    transformIndexHtml(html: string, ctx: { server?: unknown }) {
+      if (ctx.server) return html
+      return html.replace(' http://127.0.0.1:* http://localhost:*', '')
+    },
+  };
+}
+
+export { devCspPlugin }
+
 export default defineConfig({
   root: '.',
   envPrefix: 'R34_',
-  plugins: [vue()],
+  plugins: [vue(), devCspPlugin()],
   resolve: {
     alias: {
       '@': resolve(__dirname, './src'),
