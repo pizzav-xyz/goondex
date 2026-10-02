@@ -20,7 +20,7 @@ PORT_FILE = os.path.join(os.path.dirname(__file__), ".proxy-port")
 API_TIMEOUT = 15
 VIDEO_TIMEOUT = 30
 
-CLIENT_ID = "trawl-comb/0.1 (personal client)"
+CLIENT_ID = "goondex/0.1 (personal client)"
 
 RULE34_SOURCE = "rule34"
 E621_SOURCE = "e621"

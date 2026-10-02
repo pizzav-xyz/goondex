@@ -104,7 +104,7 @@ The current state that shapes this design:
 | | Rule34 | e621 |
 |---|---|---|
 | TLS | `curl_cffi impersonate="chrome"` (unchanged) | plain `curl_cffi`, **no impersonation** |
-| `User-Agent` | omitted (current behavior) | **required**, descriptive, non-browser, e.g. `trawl-comb/0.1 (personal client)` |
+| `User-Agent` | omitted (current behavior) | **required**, descriptive, non-browser, e.g. `goondex/0.1 (personal client)` |
 | Rate-limit status | **429** (Cloudflare), empty body, **no `Retry-After`** | **429** (Cloudflare, `Retry-After: 2`, **HTML body**) and **503** — treated **identically** |
 | Min spacing | **≥ 800 ms** per request | **≤ 1 req/s, serialized, never parallel** |
 | Retry | own backoff timer (no server hint to follow) | own backoff timer, honouring `Retry-After` when present |
@@ -199,7 +199,7 @@ So the normaliser validates a `date:` term against this grammar before forwardin
 
 **Decision:** Rename `package.json` `name`, README, and git repo. **Leave `r34_*` localStorage keys alone** and add a code comment recording that the prefix is intentionally historical.
 
-**Rationale:** the user scoped this explicitly. A key migration would risk silent watchlist loss for zero user-visible benefit — the prefix is internal. Name decided: `trawl-comb` (2026-10-01).
+**Rationale:** the user scoped this explicitly. A key migration would risk silent watchlist loss for zero user-visible benefit — the prefix is internal. Name decided: `goondex` (2026-10-03; previously `trawl-comb`, 2026-10-01).
 
 **Honest consequence:** after the rename, `r34_watched` won't match the project name. That's a deliberate, documented tradeoff, not an oversight.
 
@@ -299,7 +299,7 @@ Two places in this plan resolve a genuine rule conflict silently. They are named
 
 ## Open Questions
 
-1. ~~Final project name~~ — **decided: `trawl-comb` (2026-10-01).**
+1. ~~Final project name~~ — **decided: `goondex` (2026-10-03; previously `trawl-comb`, 2026-10-01).**
 2. ~~Should e621 date filtering be enabled?~~ — **resolved**: e621 supports `date:` natively, so it is enabled with no rate-sampling and no extra requests. The term is grammar-validated before forwarding, plurals are canonicalised, and bare years are never emitted.
 3. ~~Can the proxy skip User-Agent handling for e621 via `_client`?~~ — **resolved (2026-10-01): no.** Tested; the parameter is not implemented server-side and does not bypass the 403. An honest descriptive `User-Agent` is the mechanism (Decision 4).
 4. ~~Should e621 bypass the proxy, since its CORS is fully open?~~ — **resolved (2026-10-01): no.** The proxy also provides the date rewrite, the SSRF allowlist, and per-source rate limiting. Open CORS is a permission, not a reason to give up the boundary.

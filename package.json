@@ -1,5 +1,5 @@
 {
-  "name": "trawl-comb",
+  "name": "goondex",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -27,6 +27,7 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "@types/he": "^1.2.3",
     "@types/node": "^26.6.3",
     "@vitejs/plugin-vue": "^5.2.0",

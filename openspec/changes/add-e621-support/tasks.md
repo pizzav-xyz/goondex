@@ -98,7 +98,7 @@
 
 ## 9. Rename
 
-- [x] 9.1 Rename `package.json` `name` and the README title to **`trawl-comb`** (decided 2026-10-01). Re-verify at execution time that the name is still unclaimed on the npm registry before renaming — the earlier check goes stale.
+- [x] 9.1 Rename `package.json` `name` and the README title to **`goondex`** (decided 2026-10-03; previously `trawl-comb`, 2026-10-01). Re-verify at execution time that the name is still unclaimed on the npm registry before renaming — the earlier check goes stale.
 - [x] 9.2 Rename the git repository to match.
 - [x] 9.3 Add a comment at each `r34_*` localStorage key declaration recording that the prefix is intentionally historical and must not be "corrected" to match the project name.
 - [x] 9.4 Verify no stale references to the old name remain in code, docs, or config, and that the app builds and existing watchlist data still loads after the rename.

@@ -78,7 +78,7 @@ id:<6499999 date:year    -> n=8            <- correctly included
 
 e621's API guidelines state plainly: *"Do not impersonate a browser user agent, as this will get you blocked"* and *"A non-empty User-Agent header is required for all requests."* `proxy.py` currently sends `curl_cffi impersonate="chrome"` for every request. **Verified 2026-10-01** against `e621.net/help/api`.
 
-- The proxy must send an **honest, descriptive `User-Agent`** per source instead of impersonating Chrome, e.g. `trawl-comb/0.1 (personal client)`. Omitting `User-Agent` returns **403**, so this is mandatory, not stylistic. **Verified 2026-10-01.**
+- The proxy must send an **honest, descriptive `User-Agent`** per source instead of impersonating Chrome, e.g. `goondex/0.1 (personal client)`. Omitting `User-Agent` returns **403**, so this is mandatory, not stylistic. **Verified 2026-10-01.**
 - **The `_client` query parameter is not a usable escape hatch.** It is **not implemented server-side** and does **not** bypass the 403 — tested and it fails. Browsers cannot set `User-Agent` from JS, which is what that workaround was for; the proxy is a real HTTP client and sets the header directly. **Verified 2026-10-01.**
 - The 403 comes from **Cloudflare**, and it is a **denylist** of library-default tokens, not enforcement of descriptive UAs: `x`/`test` return 200 today and a full Chrome UA also returns 200 today. We send the descriptive UA anyway because the docs say to and because the denylist can change. **Verified 2026-10-01.**
 - **`curl_cffi` TLS impersonation is not used for e621.** The existing Rule34 path keeps it; e621 gets plain TLS.
@@ -107,7 +107,7 @@ e621's API guidelines state plainly: *"Do not impersonate a browser user agent, 
 
 Rename the project to reflect that it is no longer Rule34-specific, scoped to **metadata and code identifiers only**: `package.json` name, README, git repository name. The `r34_*` `localStorage` keys are **deliberately left unchanged** so existing users keep their watchlist, theme, and settings — a key migration is not worth the data-loss risk. A code comment will record that the prefix is intentionally historical.
 
-**Decided name: `trawl-comb`** (decided 2026-10-01). Verified npm-unclaimed; no literal "booru" — the subject is implied, not spelled out. Runners-up kept for reference: `barbel-sift`, `rove-sift`, `pupil-loupe`, `flit-drift`.
+**Decided name: `goondex`** (originally decided as `trawl-comb` on 2026-10-01, renamed 2026-10-03). Verified npm-unclaimed. The final name is deliberately a joke — an insider handle rather than a sanitized product name — so it is lowercase and unabbreviated on purpose. Runners-up kept for reference: `barbel-sift`, `rove-sift`, `pupil-loupe`, `flit-drift`.
 
 - **No `localStorage` key migration.** `r34_*` keys persist by design.
 - **Not BREAKING** for users: watchlist data and settings are preserved. Only the package/repository name changes.
@@ -142,7 +142,7 @@ None. `openspec/specs/` is currently empty, so every capability above is new.
 
 ## Open Questions
 
-1. ~~Final project name~~ — **decided: `trawl-comb` (2026-10-01).**
+1. ~~Final project name~~ — **decided: `goondex` (2026-10-03; previously `trawl-comb`, 2026-10-01).**
 2. ~~e621 video support~~ — **resolved (2026-10-01): e621 serves both `webm` and `mp4`** (live sample ≈ 27 `mp4` / 13 `webm`), and posts usually expose the other codec under `file.alternates`, so the adapter prefers the `mp4` alternate. e621 posts also carry a top-level float `duration` (which may be `null`, not absent), so the adapter prefers it and falls back to client-side probing only when it is null. Rule34 has **no** duration field of any kind, so it always probes — its canonical video set is `['mp4','gif']` and there is **no webm** on any host.
 3. ~~Date filtering on e621~~ — **resolved**: e621 has a native `date:` operator with a broad grammar, so no rate-sampling is needed there and `DateResolver` remains Rule34-only. The grammar is validated before forwarding, plural forms are canonicalised, and bare years are never emitted.
 4. ~~Ordering on Rule34~~ — **resolved (2026-10-01): not possible.** `sort=` is ignored on every value and the order is always newest-id-first, so ordering terms are dropped on Rule34 and surfaced to the user as a notice.

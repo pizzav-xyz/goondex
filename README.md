@@ -1,4 +1,4 @@
-# trawl-comb
+# goondex
 
 A fast, modern client for Rule34 and e621. Built with Vue 3, Vuetify 3, and TypeScript.
 
@@ -31,8 +31,8 @@ A fast, modern client for Rule34 and e621. Built with Vue 3, Vuetify 3, and Type
 ### Setup
 
 ```bash
-git clone https://github.com/pizzav-xyz/trawl-comb.git
-cd trawl-comb
+git clone https://github.com/pizzav-xyz/goondex.git
+cd goondex
 npm install
 ```
 

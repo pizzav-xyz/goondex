@@ -4,7 +4,7 @@
  * change to the expiry rule had to be made twice and one copy could drift.
  *
  * The `r34_*` key prefix throughout is intentionally historical: the project
- * was renamed to trawl-comb, but renaming stored keys would orphan every
+ * was renamed to goondex, but renaming stored keys would orphan every
  * user's existing watchlist and settings on upgrade.
  */
 

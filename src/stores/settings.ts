@@ -11,7 +11,7 @@ export { ACCENT_PALETTE }
 
 /**
  * The `r34_` prefix is intentionally historical and must NOT be "corrected"
- * to match the project name. The project is now trawl-comb, but these keys
+ * to match the project name. The project is now goondex, but these keys
  * are user data: renaming them would silently orphan every existing user's
  * settings on upgrade.
  */
