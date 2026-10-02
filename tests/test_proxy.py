@@ -58,6 +58,18 @@ class AllowlistBoundaryTests(unittest.TestCase):
             proxy_allowlist.is_allowed_media_url('https://example.com/a.png', R34)
         )
 
+    def test_no_owning_source_is_rejected_rather_than_raising(self):
+        # `source_for_media_url` returns None for an unrecognized host, and that
+        # None must reach a rejection — not a KeyError in the allowlist, which
+        # would drop the connection instead of answering 403.
+        unrecognized = 'https://evilrule34.xxx/a.png'
+        self.assertIsNone(proxy_allowlist.source_for_media_url(unrecognized))
+        self.assertFalse(
+            proxy_allowlist.is_allowed_media_url(
+                unrecognized, proxy_allowlist.source_for_media_url(unrecognized)
+            )
+        )
+
     def test_malformed_url_is_rejected(self):
         self.assertFalse(proxy_allowlist.is_allowed_media_url('not a url', R34))
         self.assertFalse(proxy_allowlist.is_allowed_media_url('', R34))
@@ -222,6 +234,9 @@ class DateThresholdTests(unittest.TestCase):
     """threshold_for reports failure instead of falling back to a broad search."""
 
     class StubResolver(proxy_date_resolver.DateResolver):
+        _latest: int | None
+        _rate: float | None
+
         def __init__(self, latest_id, rate):
             super().__init__()
             self._latest = latest_id

@@ -157,8 +157,10 @@ def retry_after_seconds(headers):
     return min(seconds, MAX_RETRY_AFTER_SECONDS)
 
 
-def classify_response(source, status, headers, body_text):
-    """Return `(kind, detail)` for a failed response, or None when it is usable.
+def classify_response(
+    source, status, headers, body_text
+) -> ClassifiedFailure | None:
+    """Return the failure's cause and detail, or None when the response is usable.
 
     The body is inspected only by TYPE and never parsed as JSON: e621's 429
     body is HTML and Rule34's is empty, so a blanket `json.loads` either throws

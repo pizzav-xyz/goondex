@@ -49,4 +49,6 @@ def is_allowed_media_url(target_url, source):
         hostname = urlparse(target_url).hostname or ''
     except ValueError:
         return False
+    if source not in proxy_config.MEDIA_HOSTS:
+        return False
     return host_permitted(hostname, proxy_config.MEDIA_HOSTS[source])

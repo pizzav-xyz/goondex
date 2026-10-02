@@ -3,7 +3,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import { nextTick } from 'vue'
 import { getSource, registeredSources, useActiveSource } from '@/sources/registry'
 import { useSettingsStore } from '@/stores/settings'
-import { DEFAULT_SOURCE_ID, isSourceId } from '@/sources/types'
+import { DEFAULT_SOURCE_ID, SOURCE_IDS, isSourceId } from '@/sources/types'
 
 beforeEach(() => {
   setActivePinia(createPinia())
@@ -50,13 +50,17 @@ describe('registeredSources', () => {
     expect(registeredSources.map((adapter) => adapter.id)).toContain('rule34')
   })
 
+  it('registers every source id and nothing else', () => {
+    expect(registeredSources.map((a) => a.id).sort()).toEqual([...SOURCE_IDS].sort())
+  })
+
   it('exposes only adapters that can actually serve a request', () => {
-    // e621 is deliberately unregistered until its adapter exists. An alias to
-    // Rule34 would serve the wrong board's posts under an e621 label.
     for (const adapter of registeredSources) {
       expect(adapter).toHaveProperty('capabilities')
+      expect(adapter).toHaveProperty('search')
+      expect(adapter).toHaveProperty('autocomplete')
+      expect(adapter).toHaveProperty('postDetail')
     }
-    expect(registeredSources.every((a) => a.id in { rule34: true })).toBe(true)
   })
 })
 
@@ -79,9 +83,15 @@ describe('active source selection', () => {
   it('switching the selection changes the dispatched adapter', () => {
     const settings = useSettingsStore()
     settings.setActiveSource('e621')
-    // e621 is not registered yet, so it resolves to the default rather than
-    // serving an adapter that does not exist.
-    expect(useActiveSource().value).toBe(getSource(DEFAULT_SOURCE_ID))
+    expect(useActiveSource().value).toBe(getSource('e621'))
+    expect(useActiveSource().value.id).toBe('e621')
+  })
+
+  it('switching back returns to the Rule34 adapter', () => {
+    const settings = useSettingsStore()
+    settings.setActiveSource('e621')
+    settings.setActiveSource('rule34')
+    expect(useActiveSource().value).toBe(getSource('rule34'))
   })
 
   it('ignores an unknown id rather than storing it', () => {

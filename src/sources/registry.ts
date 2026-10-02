@@ -3,6 +3,7 @@ import { useSettingsStore } from '@/stores/settings'
 import type { SourceAdapter, SourceId } from './types'
 import { DEFAULT_SOURCE_ID } from './types'
 import { rule34Adapter } from './rule34'
+import { e621Adapter } from './e621'
 
 /**
  * The source registry: every adapter the app can talk to, plus the lookup and
@@ -14,15 +15,10 @@ import { rule34Adapter } from './rule34'
  * shared code changes.
  */
 
-/**
- * Registered adapters, keyed by id.
- *
- * Rule34 is the only entry so far; e621 joins at migration step 6. It is
- * deliberately absent rather than aliased to Rule34: an e621 id resolving to the
- * Rule34 adapter would serve a plausible grid of the wrong board's posts while
- * the UI reported the user was on e621.
- */
-const ADAPTERS = new Map<SourceId, SourceAdapter>([['rule34', rule34Adapter]])
+const ADAPTERS = new Map<SourceId, SourceAdapter>([
+  ['rule34', rule34Adapter],
+  ['e621', e621Adapter],
+])
 
 export const registeredSources: readonly SourceAdapter[] = [...ADAPTERS.values()]
 
