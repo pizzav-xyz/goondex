@@ -1,43 +1,14 @@
-# Audit Starter — rule34-client
+# Audit Starter — Generic
 
-Copy and paste this into a new session to audit this project.
+Copy and paste this into a new session.
 
----
-
-## Project
-
-**rule34-client** — Vue 3 + TypeScript frontend with Python CORS proxy.
-
-### Modules (use these for Agent 4)
-
-| Module | Path | Description |
-|--------|------|-------------|
-| API Client | `src/api/client.ts` | Rate-limited API client with TTL cache, queue, response parsing |
-| Composables | `src/composables/` | useTheme, useAPIClient, useLightbox, useVideoBuffer, useVideoDuration |
-| Stores | `src/stores/` | settings (theme/accent/safe/watched), watched (post tracking, lightbox state) |
-| Utils | `src/utils/` | cache.ts (TTLCache), durationFilter.ts (client-side video duration filtering) |
-| Types | `src/types/` | TypeScript interfaces (Post, SearchParams, AutocompleteItem, Settings, AccentColor) |
-| Components | `src/components/` | SearchBar, ImageGrid, ImageCard, Lightbox, VideoBufferControl, SettingsPanel, AppShell |
-| Views | `src/views/` | SearchView (main orchestrator) |
-| Plugins | `src/plugins/` | vuetify.ts (MD3 theming), vue-query.ts (QueryClient config), icons/ms.ts (Material Symbols) |
-| Constants | `src/constants/` | accents.ts (18-color MD3 accent palette) |
-| Styles | `src/styles/` | tokens.css (MD3 design tokens), global.css (reset + shared utilities) |
-| Proxy | `proxy.py` | Python CORS proxy with rate limiting, date-tag resolution, video proxy |
-| Dev Server | `start.sh` | tmux launcher (proxy + Vite) |
-| Tests | `tests/` + `src/**/__tests__/` | Vitest unit tests, Playwright E2E |
-
-### Tech Stack
-
-- **Frontend**: Vue 3.5, Vuetify 3.12 (MD3 blueprint), Pinia, Vue Router, @tanstack/vue-query 5, @vueuse/core, ofetch, dayjs
-- **Proxy**: Python 3.10+, curl_cffi, python-dotenv
-- **Build**: Vite 4, vue-tsc 2, TypeScript 5.5 (strict)
-- **Test**: Vitest 2, happy-dom, Playwright 1.52
+**Before using:** Replace `<PROJECT_DIR>` with your project's root directory, `<PROJECT_NAME>` with your project name, and fill in the module list in Agent 4 if you want module-level checks. All other sections are language-agnostic.
 
 ---
 
 ## Prompt
 
-Launch **4 parallel background subagents** to audit `/home/pizzav/Documents/r34/`. Each produces a written report. Do NOT let any agent modify code — audit only.
+Launch **4 parallel background subagents** to audit `<PROJECT_DIR>/`. Each produces a written report. Do NOT let any agent modify code — audit only.
 
 ### Core principle (every agent must enforce this)
 
@@ -46,73 +17,59 @@ Launch **4 parallel background subagents** to audit `/home/pizzav/Documents/r34/
 ---
 
 ### Agent 1 — Code Simplifier (`category: deep`)
-Sweep every file in `/home/pizzav/Documents/r34/` for overcomplicated code. Flag functions over ~40 lines, nested conditionals >3 deep, duplicated logic across modules, and any code that can be replaced with a stdlib/library call.
-
-**Specifically look for fallback chains** — functions with multiple try/catch, if/else fallback paths, or "try strategy A, if that fails try B" patterns. For each fallback chain found, state the single clean approach that replaces it.
-
-**Vue-specific checks:**
-- Components with >150 lines of template or >80 lines of script (should be split)
-- Inline styles that should be extracted to scoped CSS
-- Computed properties with side effects
-- Watchers that could be computed properties
-- Missing cleanup in onUnmounted/onBeforeUnmount
-
-**Check file organization** — flag files over ~150 lines that contain multiple unrelated concerns. Recommend how to split monoliths into focused modules.
-
-Include `file:line` for each finding. Output a numbered list grouped by severity (critical → trivial).
+Sweep every file in `<PROJECT_DIR>/` for overcomplicated code. Flag functions over ~40 lines, nested conditionals >3 deep, duplicated logic across modules, and any code that can be replaced with a stdlib call. **Specifically look for fallback chains** — functions with multiple try/except, if/elif/else fallback paths, or "try strategy A, if that fails try B" patterns. For each fallback chain found, state the single clean approach that replaces it. **Check file organization** — flag files over ~150 lines that contain multiple unrelated concerns (e.g. an auth module that also handles CLI parsing). Recommend how to split monoliths into focused modules. Include `file:line` for each finding. Output a numbered list grouped by severity (critical → trivial).
 
 ### Agent 2 — Dependency & Library Audit (`category: deep`)
-Read every source file in `/home/pizzav/Documents/r34/` plus `package.json` and `proxy.py` (which declares inline dependencies via PEP 723). Map every import to its usage.
+First, read every source file in `<PROJECT_DIR>/` plus dependency manifests (`requirements.txt`, `pyproject.toml`, `package.json`, `Cargo.toml`, `go.mod`, `Gemfile`, `build.gradle`, or whatever is relevant to this project). Map every import to its usage.
 
-**Hand-rolled code to evaluate:**
-- `src/utils/cache.ts` — TTLCache (could use lru-cache or quick-lru)
-- `src/composables/useVideoDuration.ts` — offscreen video probing (no standard lib, but check if better pattern exists)
-- `src/composables/useVideoBuffer.ts` — blob URL caching (check for memory leak patterns)
-- `proxy.py` — DateResolver ID-rate estimation, rate limiting, CORS proxy (could use aiohttp/httpx, or a dedicated CORS proxy lib)
+**Step 1: Dependency Manifest Deep-Dive**
+For each declared dependency, collect:
+- Exact version (or semver range) currently pinned
+- Latest stable version available
+- Whether the pin is too loose (`^`, `~`, `*`) or too strict (exact pin without reason)
+- Any known CVEs or security advisories (search `[package] CVE`, check GitHub security advisories, check OSV.dev)
+- License type and compatibility with the project's license
+- Transitive dependency count and tree depth (use the package registry's dependency graph)
+- Whether the dependency is actively maintained (commit frequency, release cadence, open/closed issue ratio)
+- Whether the dependency is deprecated or has a recommended successor
 
-**For each dependency in package.json, check:**
-- Is it actually used? (no phantom dependencies)
-- Are there imports in code not in package.json?
-- Version pins: too loose (^4.0.0 for vite) or too strict?
-- Are `@tanstack/vue-virtual` and `@vueuse/core` fully utilized or mostly unused?
-- Is `dayjs` used anywhere? (it's in dependencies)
+**Step 2: Hand-Rolled Code → Library Mapping**
+Identify every piece of hand-rolled code that a maintained library could replace. For each:
+- Name the specific capability (e.g., "JWT validation", "CSV parsing with type coercion", "retry with exponential backoff")
+- Search for production-quality libraries using multiple query angles:
+  - `"[capability] library" [language]`
+  - `"[capability] vs [popular alternative]"`
+  - `"best [capability] library [year]"` (to find recent comparisons)
+  - `"[language] [capability] crate/package"` (language-specific registries)
+  - Reddit/HN discussions: `site:reddit.com [capability] library`
+  - Benchmark comparisons: `"[capability] benchmark" [language]`
+- For each candidate, use `webfetch` on the registry page to verify: version, last release date, weekly downloads, license, dependencies
+- Score each candidate on: popularity (downloads/stars), maintenance health, license compatibility, API ergonomics, migration effort (easy/medium/hard)
 
-**Also check proxy.py:**
-- `curl_cffi` — is it necessary over `requests`/`httpx`? (check impersonate usage)
-- Are there missing dependencies?
+**Step 3: Unused & Missing Dependency Check**
+- Run a static analysis pass: list every import/require/use statement in source files
+- Cross-reference against the manifest: flag imports without declared dependencies, and declared dependencies without imports
+- Check for "implicit" dependencies (libraries that are only used in tests, scripts, or optional features)
 
-Output a markdown table: library name, what it replaces, assessment, and recommendation.
+**Step 4: License Compatibility Matrix**
+For every dependency, determine:
+- License type (MIT, Apache-2.0, GPL, BSD, etc.)
+- Whether it is copyleft and imposes source-distribution requirements
+- Compatibility with the project's license and with each other (no license conflicts in the dependency tree)
+- Any dual-licensing or AGPL concerns
+
+Output a comprehensive markdown table with library name, what it replaces, version status, CVE risk, license, maintenance health, and replacement recommendation with migration effort.
 
 ### Agent 3 — TODO & Dead Work Audit (`category: quick`)
-Scan every source file in `/home/pizzav/Documents/r34/` for `TODO`, `FIXME`, `HACK`, `XXX`, `TEMP`, `PLACEHOLDER`, and `WORKAROUND` comments. For each: file, line, the comment text, and whether the item appears still unresolved.
-
-**Also check for:**
-- Dead/unreachable code paths
-- Commented-out blocks >5 lines
-- Unused imports
-- Dead fallback branches (else/catch paths that can never execute)
-- Unused CSS classes (check `global.css` for `.content` duplication with `SearchView.vue`)
-- Unused exports from composables/index.ts (useVideoBuffer, useVideoDuration not re-exported)
-- `LoadingDetails` ref in Lightbox.vue that's never set to true
-
-Output a numbered list grouped by file.
+Scan every source file in `<PROJECT_DIR>/` for `TODO`, `FIXME`, `HACK`, `XXX`, `TEMP`, and `PLACEHOLDER` comments. For each: file, line, the comment text, and whether the item appears still unresolved. Also check for dead/unreachable code paths, commented-out blocks >5 lines, unused imports, and **dead fallback branches** (else/except paths that can never execute). Output a numbered list grouped by file.
 
 ### Agent 4 — Completeness & Security Audit (`category: deep`)
-Check each module listed above:
-
-1. **Completeness** — Does each module have complete, runnable code or is any of it stubbed/incomplete?
-2. **Type safety** — Are there `any` types, missing return types, or `@ts-ignore`?
-3. **Hardcoded values** — URLs (`api.rule34.xxx`), secrets, timeouts (500ms rate limit, 15s API timeout, 3 concurrent buffer, 15 concurrent probes), cache sizes (50 entries, 100 entries) that should be configurable
-4. **Security concerns:**
-   - API key handling (in `import.meta.env`, passed to URL params, in proxy)
-   - CORS: proxy sends `Access-Control-Allow-Origin: *` — is this intentional?
-   - No input sanitization on tags before sending to API
-   - No CSP headers
-   - `.env` gitignored but `.proxy-port` is ephemeral (correct)
-5. **Error handling** — Empty catch blocks, swallowed errors, missing error boundaries
-6. **Dependency parity** — Do `package.json` and `proxy.py` inline deps match what code actually imports?
-7. **Test coverage gaps** — No unit tests for API client, composables, utils, or components (only settings store accent test and smoke test)
-
+Check each module in `<PROJECT_DIR>/` (replace with actual module/file list for your project, or leave generic for auto-discovery):
+1. Does each module have complete, runnable code or is any of it stubbed/incomplete?
+2. Are there imports or calls to functions that don't exist?
+3. Are there hardcoded values (URLs, secrets, timeouts) that should be configurable?
+4. Are there security concerns (credentials in logs, insecure defaults, missing error handling)?
+5. Do dependency declarations match what the code actually imports?
 Output a checklist with ✅/⚠️/❌ per item with `file:line` evidence.
 
 ---

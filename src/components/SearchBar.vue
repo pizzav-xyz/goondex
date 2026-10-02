@@ -4,7 +4,7 @@ import { useDebounceFn } from '@vueuse/core'
 import { useAPIClient } from '@/composables/useAPIClient'
 import { AUTOCOMPLETE_DEBOUNCE, AUTOCOMPLETE_MAX_RESULTS } from '@/config'
 import SyntaxHelp from './SyntaxHelp.vue'
-import type { AutocompleteItem } from '@/types'
+import type { AutocompleteSuggestion } from '@/types'
 
 const emit = defineEmits<{
   search: [params: { tags: string; ratings: string[] }]
@@ -14,7 +14,7 @@ const searchInput = ref('')
 const activeTags = ref<string[]>([])
 const activeRatings = ref<string[]>([])
 const showSyntaxHelp = ref(false)
-const autocompleteItems = ref<AutocompleteItem[]>([])
+const autocompleteItems = ref<AutocompleteSuggestion[]>([])
 const showAutocomplete = ref(false)
 const acIndex = ref(-1)
 const inputRef = ref<HTMLInputElement | null>(null)

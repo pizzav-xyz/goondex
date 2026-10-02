@@ -22,9 +22,8 @@ export function useVideoDuration() {
   async function probeDurations(posts: Post[]): Promise<Map<number, number>> {
     const videos = posts.filter(
       p =>
-        p.id !== null &&
         !durationCache.has(p.id) &&
-        (p.file_ext === 'webm' || p.file_ext === 'mp4'),
+        (p.fileExt === 'webm' || p.fileExt === 'mp4'),
     )
 
     if (videos.length === 0) {
@@ -57,11 +56,6 @@ export function useVideoDuration() {
 
   function probeOne(post: Post): Promise<void> {
     return new Promise(resolve => {
-      if (post.id === null || post.id === undefined) {
-        resolve()
-        return
-      }
-
       const video = document.createElement('video')
       video.preload = 'metadata'
       video.muted = true
@@ -83,7 +77,7 @@ export function useVideoDuration() {
       video.onloadedmetadata = () => {
         const dur = video.duration
         if (isFinite(dur) && dur > 0) {
-          durationCache.set(post.id!, dur)
+          durationCache.set(post.id, dur)
         }
         settle()
       }
@@ -91,7 +85,7 @@ export function useVideoDuration() {
       video.onerror = () => settle()
 
       document.body.appendChild(video)
-      video.src = post.file_url
+      video.src = post.fileUrl ?? ''
     })
   }
 

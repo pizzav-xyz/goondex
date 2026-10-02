@@ -1,3 +1,3 @@
-export type { Post } from './post'
+export type { Post, AutocompleteSuggestion } from '@/sources/types'
 export type { ThemeMode, WatchedMode, AccentColor, AccentColorVariant, AccentColorId } from './settings'
-export type { SearchParams, AutocompleteItem } from './api'
+export type { SearchParams } from './api'

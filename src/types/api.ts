@@ -4,9 +4,3 @@ export interface SearchParams {
   limit?: number
   ratings?: string[]
 }
-
-export interface AutocompleteItem {
-  label: string
-  value: string
-  count: number | null
-}

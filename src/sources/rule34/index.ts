@@ -236,17 +236,6 @@ class Rule34Adapter implements SourceAdapter {
     return suggestions
   }
 
-  updateAuth(apiKey: string, userId: string): void {
-    this.#apiKey = apiKey
-    this.#userId = userId
-    this.#searchCache.clear()
-    this.#autocompleteCache.clear()
-  }
-
-  hasAuth(): boolean {
-    return Boolean(this.#apiKey && this.#userId)
-  }
-
   clearCache(): void {
     this.#searchCache.clear()
     this.#autocompleteCache.clear()

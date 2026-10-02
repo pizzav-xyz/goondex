@@ -12,9 +12,9 @@ const emit = defineEmits<{
   click: [post: Post]
 }>()
 
-const img = computed(() => props.post.sample_url || props.post.preview_url || '')
-const tags = computed(() => (props.post.tags || '').split(' ').filter(Boolean).slice(0, 6))
-const isVideo = computed(() => props.post.file_ext === 'webm' || props.post.file_ext === 'mp4')
+const img = computed(() => props.post.sampleUrl || props.post.previewUrl || '')
+const tags = computed(() => props.post.tags.slice(0, 6))
+const isVideo = computed(() => props.post.fileExt === 'webm' || props.post.fileExt === 'mp4')
 const isDimmed = computed(() => props.watched && props.watchedMode === 'dim')
 const imgFailed = ref(false)
 
@@ -36,13 +36,13 @@ function onImgError() {
       <v-icon icon="arrow_upward" size="14" /> {{ post.score }}
     </span>
     <span
-      v-if="post.rating && post.rating !== 'unknown'"
+      v-if="post.rating"
       class="image-card-rating"
       :class="post.rating"
     >
       {{ post.rating }}
     </span>
-    <span v-if="isVideo" class="image-card-ext">{{ post.file_ext?.toUpperCase() }}</span>
+    <span v-if="isVideo" class="image-card-ext">{{ post.fileExt?.toUpperCase() }}</span>
     <div class="image-card-overlay">
       <div class="image-card-tags">
         <span v-for="t in tags" :key="t" class="image-card-tag">{{ t }}</span>

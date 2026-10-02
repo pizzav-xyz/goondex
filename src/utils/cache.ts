@@ -1,11 +1,3 @@
-import type { Post, AutocompleteItem } from '@/types'
-import {
-  SEARCH_CACHE_TTL,
-  SEARCH_CACHE_MAX,
-  AUTOCOMPLETE_CACHE_TTL,
-  AUTOCOMPLETE_CACHE_MAX,
-} from '@/config'
-
 /**
  * Lightweight TTL cache for API responses.
  * Preserves exact behavior from original cache.js.
@@ -59,6 +51,3 @@ export class TTLCache<T = unknown> {
     this.#store.clear()
   }
 }
-
-export const searchCache = new TTLCache<Post[]>(SEARCH_CACHE_TTL, SEARCH_CACHE_MAX)
-export const autocompleteCache = new TTLCache<AutocompleteItem[]>(AUTOCOMPLETE_CACHE_TTL, AUTOCOMPLETE_CACHE_MAX)

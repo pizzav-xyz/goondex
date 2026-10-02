@@ -1,5 +1,6 @@
 .env
 .proxy-port
+dev.log
 node_modules/
 dist/
 __pycache__/

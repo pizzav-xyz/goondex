@@ -9,17 +9,17 @@ const bufferedCount = ref(0)
 let abortController: AbortController | null = null
 
 function isVideo(post: Post): boolean {
-  return post.file_ext === 'webm' || post.file_ext === 'mp4'
+  return post.fileExt === 'webm' || post.fileExt === 'mp4'
 }
 
 function getVideoUrl(post: Post): string | null {
   if (!isVideo(post)) return null
-  return post.file_url || post.sample_url || null
+  return post.fileUrl || post.sampleUrl || null
 }
 
 async function fetchOne(post: Post, signal: AbortSignal): Promise<void> {
   const id = post.id
-  if (id == null || buffer.has(id)) return
+  if (buffer.has(id)) return
 
   const url = getVideoUrl(post)
   if (!url) return
@@ -43,7 +43,7 @@ async function bufferVideos(posts: Post[], count: number): Promise<void> {
 
   // Only buffer video posts that aren't already cached
   const targets = posts
-    .filter(p => isVideo(p) && p.id != null && !buffer.has(p.id))
+    .filter(p => isVideo(p) && !buffer.has(p.id))
     .slice(0, count)
 
   if (targets.length === 0) return
@@ -67,13 +67,11 @@ async function bufferVideos(posts: Post[], count: number): Promise<void> {
 
 /** Get cached blob URL for a post, or null if not buffered */
 function getBufferedUrl(post: Post): string | null {
-  if (post.id == null) return null
   return buffer.get(post.id) ?? null
 }
 
 /** Check if a post is already buffered */
 function isBuffered(post: Post): boolean {
-  if (post.id == null) return false
   return buffer.has(post.id)
 }
 

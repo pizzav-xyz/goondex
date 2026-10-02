@@ -11,7 +11,8 @@
     "preview": "vite preview",
     "type-check": "vue-tsc --noEmit",
     "test": "vitest --run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:proxy": "uv run --with python-dotenv --with curl_cffi python -m unittest discover -s tests -t . -p 'test_*.py'"
   },
   "dependencies": {
     "@vueuse/core": "^11.3.0",

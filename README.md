@@ -15,8 +15,8 @@ A fast, modern client for the Rule34 API. Built with Vue 3, Vuetify 3, and TypeS
 ## Tech Stack
 
 - **Frontend**: Vue 3 + Vuetify 3 + Pinia + Vue Router
-- **HTTP**: ofetch with request queue and rate limiting (2 req/s)
-- **Proxy**: Python (uv) — CORS proxy with date-tag resolution
+- **HTTP**: ofetch with per-source request queues and rate limiting
+- **Proxy**: Python (uv) — CORS proxy with per-source routing, transport policy, and date-tag resolution
 - **Build**: Vite 6 + TypeScript (strict mode)
 - **Tests**: Vitest + Playwright
 
@@ -95,6 +95,23 @@ proxy.py           # Python CORS proxy
 | `R34_API_KEY` | Rule34 API key |
 | `R34_USER_ID` | Rule34 user ID |
 | `R34_PROXY_PORT` | Proxy port (default: 34000) |
+| `E621_LOGIN` | e621 login (optional; anonymous reads when unset) |
+| `E621_API_KEY` | e621 API key (optional; anonymous reads when unset) |
+
+## Rate Limits
+
+Two limiters stack, and the effective interval is the larger of the two:
+
+| | Client queue | Proxy |
+|---|---|---|
+| Rule34 | 800 ms | 800 ms |
+| e621 | 1000 ms | 1000 ms |
+
+Rule34's rate limiter starts rejecting at ≈1.25 req/s, so 800 ms is the floor.
+e621 is held to ≤1 req/s, fully serialized — its 429 comes from Cloudflare's
+load shedder rather than a documented quota, so parallel requests are what
+actually trip it. e621 also needs a descriptive non-browser `User-Agent`; the
+proxy sends one, and browser impersonation is deliberately not used.
 
 ## License
 

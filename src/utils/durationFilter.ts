@@ -110,8 +110,7 @@ export function filterByDuration(
 ): Post[] {
   if (conditions.length === 0) return posts
   return posts.filter(post => {
-    if (post.id === null) return false
-    const dur = durationMap.get(post.id) ?? post.video_duration ?? null
+    const dur = durationMap.get(post.id) ?? post.duration ?? null
     return conditions.every(c => matchesCondition(dur, c))
   })
 }
