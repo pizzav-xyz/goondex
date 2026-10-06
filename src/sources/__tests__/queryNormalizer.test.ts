@@ -173,17 +173,27 @@ describe('date term handling', () => {
 })
 
 describe('duration terms', () => {
-  it.each([R34, E621])('is consumed client-side on %s and never sent upstream', (target) => {
-    const result = normalizeQueryDetailed('duration:>30', target)
+  it('is consumed clientside on rule34 and never sent upstream', () => {
+    const result = normalizeQueryDetailed('duration:>30', R34)
     expect(result.query).toBe('')
     // Honored by another mechanism, so not reported as a drop.
     expect(result.dropped).toEqual([])
   })
 
-  it.each([R34, E621])('consumes every duration form on %s', (target) => {
+  it('consumes every duration form on rule34', () => {
     for (const term of ['duration:>30', 'duration:>=60', 'duration:<120', 'duration:30-60']) {
-      expect(normalizeQuery(term, target).query).toBe('')
+      expect(normalizeQuery(term, R34).query).toBe('')
     }
+  })
+
+  it('is consumed clientside on every source, never forwarded upstream', () => {
+    for (const term of ['duration:>30', 'duration:>=60', 'duration:<120', 'duration:30-60']) {
+      expect(normalizeQueryDetailed(term, E621).query).toBe('')
+    }
+  })
+
+  it('defaults to clientside consumption when no capability is declared', () => {
+    expect(normalizeQuery('duration:>30', E621).query).toBe('')
   })
 })
 

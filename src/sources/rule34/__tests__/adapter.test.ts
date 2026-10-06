@@ -5,6 +5,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
  * adapter emits, because the failure modes they guard are invisible in the
  * response: a no-op parameter, a misrouted page index, or a body rejected for
  * its declared media type all "work" until a user's results are quietly wrong.
+ *
+ * Autocomplete-specific cases live in `autocomplete.test.ts`.
  */
 
 const fetchMock = vi.fn()
@@ -210,6 +212,16 @@ describe('search response normalization', () => {
     )
   })
 
+  // Named regression: Rule34 returns a bare JSON string when credentials are
+  // missing or bad. The adapter must detect auth failure by BODY TYPE, not by
+  // status code, and must report it distinctly from a network/parse error.
+  it('named regression: bare JSON string auth error body reports auth failure', async () => {
+    fetchMock.mockResolvedValue('"Missing authentication. Go to api.rule34.xxx for more information"')
+    await expect(rule34Adapter.search({ query: 'solo', page: 0, limit: 100 })).rejects.toMatchObject({
+      kind: 'auth',
+    })
+  })
+
   it('classifies a 429 as rate-limited with no invented retry delay', async () => {
     // Rule34's 429 has an empty body and no Retry-After, so there is no server
     // hint to honor and none may be fabricated.
@@ -254,74 +266,6 @@ describe('caching', () => {
     await rule34Adapter.search({ query: 'solo', page: 0, limit: 100 })
     await rule34Adapter.search({ query: 'solo', page: 1, limit: 100 })
     expect(fetchMock).toHaveBeenCalledTimes(2)
-  })
-})
-
-describe('autocomplete', () => {
-  beforeEach(() => {
-    fetchMock.mockResolvedValue(
-      JSON.stringify([
-        { label: 'solo (12345)', value: 'solo' },
-        { label: 'solesmasher (7)', value: 'solesmasher' },
-      ]),
-    )
-  })
-
-  it('addresses the autocomplete endpoint', async () => {
-    await rule34Adapter.autocomplete('sol')
-    expect(lastRequest().path).toBe('/autocomplete.php')
-    expect(lastRequest().params.get('q')).toBe('sol')
-  })
-
-  // Named regression: this endpoint answers `content-type: text/html` with a
-  // JSON body. Rejecting on the declared media type discards every suggestion.
-  it('named regression: parses a JSON body declared as text/html', async () => {
-    const suggestions = await rule34Adapter.autocomplete('sol')
-    expect(suggestions).toHaveLength(2)
-  })
-
-  it('extracts the parenthesized count out of the label', async () => {
-    const [first] = await rule34Adapter.autocomplete('sol')
-    expect(first.label).toBe('solo')
-    expect(first.value).toBe('solo')
-    expect(first.count).toBe(12345)
-  })
-
-  it('strips only a trailing parenthesized group', async () => {
-    fetchMock.mockResolvedValue(JSON.stringify([{ label: 'tag(name) (5)', value: 'tag(name)' }]))
-    const [only] = await rule34Adapter.autocomplete('tag')
-    expect(only.label).toBe('tag(name)')
-    expect(only.count).toBe(5)
-  })
-
-  it('reports an absent count as null rather than zero', async () => {
-    fetchMock.mockResolvedValue(JSON.stringify([{ label: 'solo', value: 'solo' }]))
-    const [only] = await rule34Adapter.autocomplete('solo')
-    expect(only.count).toBeNull()
-  })
-
-  it('discards a suggestion with no searchable value', async () => {
-    fetchMock.mockResolvedValue(JSON.stringify([{ label: '', value: '' }]))
-    expect(await rule34Adapter.autocomplete('x')).toEqual([])
-  })
-
-  it('issues no request for an empty query', async () => {
-    expect(await rule34Adapter.autocomplete('   ')).toEqual([])
-    expect(fetchMock).not.toHaveBeenCalled()
-  })
-
-  it('returns nothing for a prefixed term rather than unrelated suggestions', async () => {
-    // Rule34's completion index has no metatag rows, so a prefixed term has no
-    // suggestions even though the same term works as a search.
-    fetchMock.mockResolvedValue('')
-    expect(await rule34Adapter.autocomplete('user:')).toEqual([])
-  })
-
-  it('caps the suggestion count', async () => {
-    const many = Array.from({ length: 40 }, (_, i) => ({ label: `t${i}`, value: `t${i}` }))
-    fetchMock.mockResolvedValue(JSON.stringify(many))
-    const suggestions = await rule34Adapter.autocomplete('t')
-    expect(suggestions.length).toBeLessThanOrEqual(8)
   })
 })
 

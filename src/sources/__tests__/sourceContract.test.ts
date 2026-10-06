@@ -18,6 +18,7 @@ const rule34Capabilities: SourceCapabilities = {
   ratingFilter: true,
   ratings: ['explicit', 'questionable'],
   nativeDateFilter: false,
+  nativeDurationFilter: false,
   ordering: false,
   sortFields: [],
   tagCompletion: true,

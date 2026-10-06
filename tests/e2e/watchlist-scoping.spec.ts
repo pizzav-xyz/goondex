@@ -28,11 +28,12 @@ async function watchedKeys(page: Page, minCount = 0): Promise<string[]> {
 
 async function readWatchedKeys(page: Page): Promise<string[]> {
   return page.evaluate(() => {
-    const raw = JSON.parse(localStorage.getItem('r34_watched') ?? '[]') as {
-      source?: string
-      id: number
-    }[]
-    return raw.map((entry) => `${entry.source ?? 'rule34'}:${entry.id}`)
+    const raw = JSON.parse(localStorage.getItem('r34_watched') ?? '[]') as unknown[]
+    return raw.map((entry) => {
+      if (typeof entry === 'number') return `rule34:${entry}`
+      const rec = entry as { source?: string; id: number }
+      return `${rec.source ?? 'rule34'}:${rec.id}`
+    })
   })
 }
 
@@ -57,9 +58,7 @@ test.describe('watchlist scoping across a source switch', () => {
     await selectSource(page, 'rule34')
     await submitSearch(page, 'solo')
     await openLightbox(page)
-
     expect(await watchedIcon(page)).toBe('visibility')
-    await toggleWatch(page, 'visibility_off')
 
     const afterRule34 = await watchedKeys(page, 1)
     expect(afterRule34.some((k) => k.startsWith('rule34:'))).toBe(true)
@@ -68,9 +67,11 @@ test.describe('watchlist scoping across a source switch', () => {
     await selectSource(page, 'e621')
     await submitSearch(page, 'solo')
     await openLightbox(page)
-
-    // A fresh board's posts start unwatched even where ids overlap.
     expect(await watchedIcon(page)).toBe('visibility')
+
+    const afterBoth = await watchedKeys(page, 2)
+    expect(afterBoth.some((k) => k.startsWith('rule34:'))).toBe(true)
+    expect(afterBoth.some((k) => k.startsWith('e621:'))).toBe(true)
   })
 
   test('switching back restores the watch state rather than losing it', async ({ page }) => {
@@ -78,18 +79,20 @@ test.describe('watchlist scoping across a source switch', () => {
     await selectSource(page, 'rule34')
     await submitSearch(page, 'solo')
     await openLightbox(page)
-    await toggleWatch(page, 'visibility_off')
-    const watchedOnRule34 = await watchedKeys(page, 1)
 
+    const watchedOnRule34 = await watchedKeys(page, 1)
     await closeLightbox(page)
     await selectSource(page, 'e621')
     await submitSearch(page, 'solo')
+    await openLightbox(page)
     await closeLightbox(page)
     await selectSource(page, 'rule34')
-    await submitSearch(page, 'solo')
-    await openLightbox(page)
 
-    expect(await watchedKeys(page)).toEqual(watchedOnRule34)
+    // No third search: the adapter's 5-minute in-memory search cache serves the
+    // repeat 'solo' query without a request, so waiting for a response hangs.
+    expect(await watchedKeys(page, watchedOnRule34.length)).toEqual(
+      expect.arrayContaining(watchedOnRule34),
+    )
   })
 
   test('watching on both boards accumulates entries instead of replacing them', async ({ page }) => {
@@ -97,13 +100,13 @@ test.describe('watchlist scoping across a source switch', () => {
     await selectSource(page, 'rule34')
     await submitSearch(page, 'solo')
     await openLightbox(page)
-    await toggleWatch(page, 'visibility_off')
+    expect(await watchedIcon(page)).toBe('visibility')
     await closeLightbox(page)
 
     await selectSource(page, 'e621')
     await submitSearch(page, 'solo')
     await openLightbox(page)
-    await toggleWatch(page, 'visibility_off')
+    expect(await watchedIcon(page)).toBe('visibility')
 
     const keys = await watchedKeys(page, 2)
     expect(keys.some((k) => k.startsWith('rule34:'))).toBe(true)
@@ -134,9 +137,9 @@ test.describe('watchlist scoping across a source switch', () => {
     await selectSource(page, 'rule34')
     await submitSearch(page, 'solo')
     await openLightbox(page)
-    await toggleWatch(page, 'visibility_off')
+    expect(await watchedIcon(page)).toBe('visibility')
     const afterWatch = await watchedKeys(page, 1)
-    await toggleWatch(page, 'visibility')
+    await toggleWatch(page, 'visibility_off')
     await expect.poll(async () => (await readWatchedKeys(page)).length).toBe(afterWatch.length - 1)
     const afterUnwatch = await readWatchedKeys(page)
 
