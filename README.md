@@ -118,6 +118,21 @@ load shedder rather than a documented quota, so parallel requests are what
 actually trip it. e621 also needs a descriptive non-browser `User-Agent`; the
 proxy sends one, and browser impersonation is deliberately not used.
 
+## Date Filtering
+
+e621 filters natively: `date:` terms are validated and passed through as part
+of the search query. Rule34 has no date operator at all, so `date:` is resolved
+by paging to an id threshold instead (deep pagination):
+
+- Rule34's only timestamp is `change`, an integer of Unix seconds — and it is
+  **last-modified time, not creation time**. Rule34 exposes no creation
+  timestamp of any kind (`created_at` does not exist).
+- Pagination uses the 0-based `pid=` parameter. `page=` is not valid: the API
+  answers it with HTTP 200 and a 0-byte body, which reads as an empty result.
+- Week/month/year windows therefore resolve client-side by sampling the
+  posting rate and paging to the matching id — potentially thousands of pages
+  deep — rather than by any server-side filter.
+
 ## License
 
 MIT
