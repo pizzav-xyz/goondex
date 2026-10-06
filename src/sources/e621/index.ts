@@ -48,6 +48,7 @@ export const E621_CAPABILITIES: SourceCapabilities = {
   ratingFilter: true,
   ratings: ['safe', 'questionable', 'explicit'],
   nativeDateFilter: true,
+  nativeDurationFilter: false,
   ordering: true,
   sortFields: ['id', 'score', 'date'],
   tagCompletion: true,

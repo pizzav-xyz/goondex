@@ -64,6 +64,8 @@ export interface SourceCapabilities {
   readonly ratings: readonly CanonicalRating[]
   /** A native `date:` operator exists and is forwarded rather than synthesized. */
   readonly nativeDateFilter: boolean
+  /** No source declares a native duration operator; duration is always probed clientside. */
+  readonly nativeDurationFilter: boolean
   /** Ordering is honored; `sortFields` are the only fields it honors. */
   readonly ordering: boolean
   /** Fields this source can order by. Empty when `ordering` is false. */

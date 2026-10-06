@@ -33,6 +33,8 @@ export const RULE34_CAPABILITIES: SourceCapabilities = {
   // `safe` request is forwarded verbatim and correctly matches nothing.
   ratings: ['explicit', 'questionable'],
   nativeDateFilter: false,
+  // Rule34 exposes no duration operator; durations are probed instead.
+  nativeDurationFilter: false,
   // `sort=` is entirely ignored upstream — every value returns the same set.
   ordering: false,
   sortFields: [],
@@ -201,8 +203,12 @@ class Rule34Adapter implements SourceAdapter {
     }
 
     // Upstream reports some errors as a bare JSON string rather than a payload.
+    // Auth failures carry a known message; anything else is a generic parse error.
     if (typeof parsed === 'string') {
-      throw new SourceRequestError(parsed, 'parse')
+      const message = parsed.trim()
+      const isAuthError = /Missing authentication|api\.rule34\.xxx/.test(message)
+      const kind = isAuthError ? 'auth' : 'parse'
+      throw new SourceRequestError(message, kind)
     }
 
     return Array.isArray(parsed) ? parsed : []
