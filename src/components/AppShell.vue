@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { useSettingsStore } from '@/stores/settings'
 import { useActiveSource } from '@/sources/registry'
 import { useTheme } from '@/composables/useTheme'
-import { WATCHED_MODES } from '@/types'
+import { WATCHED_MODES, WATCHED_MODE_META } from '@/types'
 import { SITE_NAME } from '@/constants/site'
 
 const emit = defineEmits<{
@@ -14,22 +14,14 @@ const settings = useSettingsStore()
 const { cycleTheme } = useTheme()
 const activeSource = computed(() => useActiveSource().value)
 
-const WATCHED_ICONS: Record<string, string> = {
-  show: 'visibility',
-  dim: 'visibility',
-  hide: 'visibility_off',
-}
-const WATCHED_LABELS: Record<string, string> = {
-  show: 'Show all',
-  dim: 'Dim watched',
-  hide: 'Hide watched',
-}
+const watchedMeta = (mode: string) =>
+  WATCHED_MODE_META.find((m) => m.value === mode) ?? WATCHED_MODE_META[0]!
 
 const themeIcon = computed(() =>
   settings.theme === 'dark' ? 'light_mode' : 'dark_mode',
 )
-const watchedIcon = computed(() => WATCHED_ICONS[settings.watchedMode])
-const watchedLabel = computed(() => WATCHED_LABELS[settings.watchedMode])
+const watchedIcon = computed(() => watchedMeta(settings.watchedMode).icon)
+const watchedLabel = computed(() => watchedMeta(settings.watchedMode).label)
 const isWatchedActive = computed(() => settings.watchedMode !== 'show')
 
 function cycleWatchedMode() {

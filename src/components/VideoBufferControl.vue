@@ -19,7 +19,7 @@ const props = defineProps<{
 const { buffering, bufferedCount, bufferVideos, cancelBuffer } = useVideoBuffer()
 
 /** Withheld entirely when the active source serves no video. */
-const videoSupported = hasVideoSupport()
+const videoSupported = computed(() => hasVideoSupport())
 
 /** Number of videos to buffer next */
 const bufferCount = ref<string>('20')

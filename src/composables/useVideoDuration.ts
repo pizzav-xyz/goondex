@@ -1,7 +1,7 @@
 import { ref, type Ref } from 'vue'
 import type { Post } from '@/types'
 import { MAX_CONCURRENT_PROBE, PROBE_TIMEOUT } from '@/config'
-import { isVideo, hasVideoSupport } from '@/sources/media'
+import { isVideo, getMediaUrl, hasVideoSupport } from '@/sources/media'
 
 /** Persistent cache across searches — avoids re-probing the same videos. */
 const durationCache = new Map<number, number>()
@@ -87,7 +87,7 @@ export function useVideoDuration() {
       video.onerror = () => settle()
 
       document.body.appendChild(video)
-      video.src = post.fileUrl ?? post.sampleUrl ?? ''
+      video.src = getMediaUrl(post) ?? ''
     })
   }
 

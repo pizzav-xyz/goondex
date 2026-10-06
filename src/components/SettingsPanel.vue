@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { useVModel } from '@vueuse/core'
 import { ACCENT_PALETTE, useSettingsStore } from '@/stores/settings'
 import { registeredSources, useActiveSource } from '@/sources/registry'
+import { THEME_MODE_META, WATCHED_MODE_META } from '@/types'
 import type { AccentColorId, SourceId, ThemeMode, WatchedMode } from '@/types'
 
 const props = defineProps<{
@@ -16,17 +17,9 @@ const emit = defineEmits<{
 const show = useVModel(props, 'modelValue', emit)
 const settings = useSettingsStore()
 
-const THEMES: { value: ThemeMode; label: string; icon: string }[] = [
-  { value: 'light', label: 'Light', icon: 'light_mode' },
-  { value: 'dark', label: 'Dark', icon: 'dark_mode' },
-  { value: 'system', label: 'System', icon: 'contrast' },
-]
+const THEMES = THEME_MODE_META
 
-const WATCHED_MODES: { value: WatchedMode; label: string }[] = [
-  { value: 'show', label: 'Show all' },
-  { value: 'dim', label: 'Dim watched' },
-  { value: 'hide', label: 'Hide watched' },
-]
+const WATCHED_MODES = WATCHED_MODE_META
 
 const activeSourceNote = computed(() => {  const caps = useActiveSource().value.capabilities
   return caps.nativeDateFilter

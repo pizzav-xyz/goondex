@@ -24,10 +24,8 @@ const KEYS = {
   SEARCH_STATE_TS: 'r34_search_state_ts',
 } as const
 
-const VALID_THEMES: ThemeMode[] = [...THEME_MODES]
-
 function parseThemeMode(val: string | null): ThemeMode {
-  if (val && VALID_THEMES.includes(val as ThemeMode)) return val as ThemeMode
+  if (val && (THEME_MODES as readonly string[]).includes(val)) return val as ThemeMode
   return 'light'
 }
 
