@@ -1,111 +1,46 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
-import { useDebounceFn } from '@vueuse/core'
+import { ref, watch } from 'vue'
 import { useAPIClient } from '@/composables/useAPIClient'
-import { useActiveSource } from '@/sources/registry'
-import { AUTOCOMPLETE_DEBOUNCE, AUTOCOMPLETE_MAX_RESULTS } from '@/config'
+import { useAutocomplete } from '@/composables/useAutocomplete'
+import { useSearchFilters } from '@/composables/useSearchFilters'
 import SyntaxHelp from './SyntaxHelp.vue'
-import type { AutocompleteSuggestion } from '@/types'
+import AutocompleteDropdown from './AutocompleteDropdown.vue'
+import FilterChips from './FilterChips.vue'
 
 const emit = defineEmits<{
   search: [params: { tags: string; ratings: string[] }]
 }>()
 
 const searchInput = ref('')
-const activeTags = ref<string[]>([])
-const activeRatings = ref<string[]>([])
 const showSyntaxHelp = ref(false)
-const autocompleteItems = ref<AutocompleteSuggestion[]>([])
-const showAutocomplete = ref(false)
-const acIndex = ref(-1)
-const acFailed = ref(false)
 const inputRef = ref<HTMLInputElement | null>(null)
-const dropdownRef = ref<HTMLDivElement | null>(null)
 const api = useAPIClient()
-const caps = computed(() => useActiveSource().value.capabilities)
 
-const RATING_LABELS: Record<string, string> = {
-  safe: 'Safe',
-  questionable: 'Questionable',
-  explicit: 'Explicit',
-}
-
-/** Only ratings the active adapter can actually express are offered. */
-const RATINGS = computed(() =>
-  (caps.value.ratingFilter ? caps.value.ratings : []).map((value) => ({
-    label: RATING_LABELS[value] ?? value,
-    value,
-  })),
+const {
+  items: autocompleteItems,
+  visible: showAutocomplete,
+  index: acIndex,
+  failed: acFailed,
+  request: fetchAutocomplete,
+  dismiss: resetAutocomplete,
+} = useAutocomplete(
+  (query: string) => api.autocomplete(query),
+  () => searchInput.value,
 )
 
-const hasActiveFilters = computed(() => activeRatings.value.length > 0 || activeTags.value.length > 0)
+const {
+  activeTags,
+  activeRatings,
+  RATINGS,
+  hasActiveFilters,
+  addTag,
+  removeTag,
+  toggleRating,
+  clearAll,
+} = useSearchFilters()
 
 // Debounced autocomplete fetch
-const fetchAutocomplete = useDebounceFn(async (query: string) => {
-  const trimmedQuery = query.trim()
-  if (trimmedQuery.length < 2) {
-    autocompleteItems.value = []
-    showAutocomplete.value = false
-    acFailed.value = false
-    return
-  }
-
-  try {
-    const results = await api.autocomplete(trimmedQuery)
-    if (searchInput.value.trim() !== trimmedQuery) return
-
-    const sliced = results.slice(0, AUTOCOMPLETE_MAX_RESULTS)
-    acFailed.value = false
-    if (!sliced.length) {
-      showAutocomplete.value = false
-      return
-    }
-
-    autocompleteItems.value = sliced
-    showAutocomplete.value = true
-    acIndex.value = -1
-  } catch {
-    // A failed request is reported distinctly from zero matches: showing no
-    // dropdown here would read as "this tag does not exist".
-    autocompleteItems.value = []
-    showAutocomplete.value = false
-    acFailed.value = true
-  }
-}, AUTOCOMPLETE_DEBOUNCE)
-
 watch(searchInput, (val) => fetchAutocomplete(val))
-
-function addTag(tag: string) {
-  const normalized = tag.trim()
-  if (!normalized || activeTags.value.includes(normalized)) return
-  activeTags.value.push(normalized)
-}
-
-function removeTag(tag: string) {
-  activeTags.value = activeTags.value.filter((t) => t !== tag)
-  submitSearch()
-}
-
-function toggleRating(rating: string) {
-  const idx = activeRatings.value.indexOf(rating)
-  if (idx >= 0) activeRatings.value.splice(idx, 1)
-  else activeRatings.value.push(rating)
-  submitSearch()
-}
-
-function pickTag(tag: string) {
-  const normalized = tag.trim()
-  if (!normalized || activeTags.value.includes(normalized)) {
-    searchInput.value = ''
-    showAutocomplete.value = false
-    return
-  }
-  activeTags.value.push(normalized)
-  searchInput.value = ''
-  showAutocomplete.value = false
-  acIndex.value = -1
-  submitSearch()
-}
 
 function submitSearch() {
   const manual = searchInput.value.trim()
@@ -118,15 +53,23 @@ function submitSearch() {
     }
   }
   searchInput.value = ''
+  resetAutocomplete()
   emit('search', {
     tags: activeTags.value.join(' '),
     ratings: [...activeRatings.value],
   })
 }
 
-function clearAll() {
-  activeRatings.value = []
-  activeTags.value = []
+function pickTag(tag: string) {
+  const normalized = tag.trim()
+  if (!normalized || activeTags.value.includes(normalized)) {
+    searchInput.value = ''
+    resetAutocomplete()
+    return
+  }
+  activeTags.value.push(normalized)
+  searchInput.value = ''
+  resetAutocomplete()
   submitSearch()
 }
 
@@ -160,8 +103,7 @@ function handleKeydown(e: KeyboardEvent) {
       submitSearch()
     }
   } else if (e.key === 'Escape') {
-    showAutocomplete.value = false
-    acIndex.value = -1
+    resetAutocomplete()
   }
 }
 
@@ -173,17 +115,11 @@ function updateInputFromAc() {
 
 function handleBlur() {
   setTimeout(() => {
-    showAutocomplete.value = false
-    acIndex.value = -1
+    resetAutocomplete()
   }, 200)
 }
 
-function handleMousedown(e: MouseEvent, tag: string) {
-  e.preventDefault()
-  pickTag(tag)
-}
-
-// Expose for parent (lightbox tag click)
+// Expose for parent (lightbox tag click, URL/dev-state restore)
 defineExpose({
   addTagAndSearch,
   setTags(tags: string[]) {
@@ -199,7 +135,6 @@ defineExpose({
 
 <template>
   <div class="search-container">
-    <!-- Search Bar -->
     <div class="search-bar">
       <div class="search-input-wrap">
         <v-icon icon="search" size="20" class="search-icon" />
@@ -214,32 +149,20 @@ defineExpose({
           @keydown="handleKeydown"
           @blur="handleBlur"
         />
-        <!-- Autocomplete Dropdown -->
-        <div
+        <AutocompleteDropdown
           v-if="showAutocomplete && autocompleteItems.length"
-          ref="dropdownRef"
-          class="autocomplete-dropdown"
-        >
-          <div
-            v-for="(item, index) in autocompleteItems"
-            :key="item.value"
-            class="autocomplete-item"
-            :class="{ active: index === acIndex }"
-            @mousedown="handleMousedown($event, item.value)"
-          >
-            <span class="autocomplete-label">{{ item.label }}</span>
-            <span
-              v-if="item.count !== null"
-              class="autocomplete-count"
-            >{{ item.count.toLocaleString() }}</span>
-          </div>
-        </div>
-        <div
+          :items="autocompleteItems"
+          :active-index="acIndex"
+          :failed="false"
+          @pick="pickTag"
+        />
+        <AutocompleteDropdown
           v-else-if="acFailed"
-          class="autocomplete-dropdown autocomplete-failed"
-        >
-          <span class="autocomplete-label">Tag suggestions unavailable</span>
-        </div>
+          :items="[]"
+          :active-index="-1"
+          :failed="true"
+          @pick="pickTag"
+        />
       </div>
       <v-btn
         color="primary"
@@ -260,47 +183,16 @@ defineExpose({
       />
     </div>
 
-    <!-- Active Tags -->
-    <div v-if="activeTags.length" class="active-tags">
-      <v-chip
-        v-for="tag in activeTags"
-        :key="tag"
-        size="small"
-        color="primary"
-        variant="flat"
-        closable
-        class="tag-chip"
-        @click:close="removeTag(tag)"
-      >
-        {{ tag }}
-      </v-chip>
-    </div>
+    <FilterChips
+      :active-tags="activeTags"
+      :ratings="RATINGS"
+      :active-ratings="activeRatings"
+      :has-active-filters="hasActiveFilters"
+      @remove-tag="removeTag"
+      @toggle-rating="toggleRating"
+      @clear="clearAll"
+    />
 
-    <!-- Filter Row: Rating Chips -->
-    <div v-if="RATINGS.length" class="filter-row">
-      <v-chip
-        v-for="r in RATINGS"
-        :key="r.value"
-        size="small"
-        :variant="activeRatings.includes(r.value) ? 'flat' : 'outlined'"
-        :color="activeRatings.includes(r.value) ? 'secondary' : undefined"
-        class="rating-chip"
-        @click="toggleRating(r.value)"
-      >
-        {{ r.label }}
-      </v-chip>
-      <v-chip
-        v-if="hasActiveFilters"
-        size="small"
-        variant="text"
-        class="clear-chip"
-        @click="clearAll"
-      >
-        Clear filters
-      </v-chip>
-    </div>
-
-    <!-- Syntax Help Panel -->
     <SyntaxHelp v-if="showSyntaxHelp" @tag-click="addTagAndSearch" />
   </div>
 </template>
@@ -366,84 +258,6 @@ defineExpose({
 
 .search-help-btn {
   flex-shrink: 0;
-}
-
-/* ── Autocomplete ─────────────────────────────── */
-.autocomplete-dropdown {
-  position: absolute;
-  top: calc(100% + 4px);
-  left: 0;
-  right: 0;
-  z-index: 200;
-  background: var(--md-surface-container);
-  border: 1px solid var(--md-outline-variant);
-  border-radius: var(--md-shape-md);
-  box-shadow: var(--md-elevation-2);
-  max-height: 320px;
-  overflow-y: auto;
-}
-
-.autocomplete-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
-  cursor: pointer;
-  transition: background var(--md-motion-fast) var(--md-motion-standard);
-}
-
-.autocomplete-item:hover,
-.autocomplete-item.active {
-  background: var(--md-surface-container-high);
-}
-
-.autocomplete-failed {
-  padding: 12px 16px;
-}
-
-.autocomplete-failed .autocomplete-label {
-  color: var(--md-on-surface-variant);
-  font-size: 13px;
-}
-
-.autocomplete-label {
-  flex: 1;
-  color: var(--md-on-surface);
-  font-size: 14px;
-}
-
-.autocomplete-count {
-  color: var(--md-on-surface-variant);
-  font-size: 12px;
-}
-
-/* ── Filter Row & Chips ───────────────────────── */
-.filter-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 12px;
-  max-width: 1200px;
-  margin-inline: auto;
-}
-
-.clear-chip {
-  font-size: 13px;
-  text-transform: none;
-}
-
-/* ── Active Tags ──────────────────────────────── */
-.active-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 8px;
-  max-width: 1200px;
-  margin-inline: auto;
-}
-
-.tag-chip {
-  font-size: 12px;
 }
 
 /* ── Responsive ───────────────────────────────── */

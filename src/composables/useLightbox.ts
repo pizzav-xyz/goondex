@@ -7,7 +7,7 @@ import type SearchBar from '@/components/SearchBar.vue'
 interface UseLightboxOptions {
   api: APIClient
   watched: ReturnType<typeof useWatchedStore>
-  searchBarRef: ReturnType<typeof ref<InstanceType<typeof SearchBar> | null>>
+  searchBarRef: ReturnType<typeof ref<InstanceType<typeof SearchBar> & { addTagAndSearch(tag: string): void } | null>>
 }
 
 export function useLightbox({ api, watched, searchBarRef }: UseLightboxOptions) {
