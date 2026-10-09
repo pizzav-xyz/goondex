@@ -23,7 +23,10 @@
  * operator sets cannot be enumerated reliably, so removing a term on
  * suspicion would silently discard something the user asked for.
  *
- * Verified against both live APIs on 2026-10-01.
+ * Verified against both live APIs on 2026-10-01; Rule34 `sort:` support
+ * re-verified against the live API on 2026-10-09 (`sort:score`,
+ * `sort:score:asc`, `sort:id:asc`, `sort:random`, `sort:updated:desc` all
+ * reorder results; bare `sort:id` means newest-first).
  */
 
 import type { DroppedTerm, SourceId } from './types'
@@ -99,9 +102,6 @@ const E621_ORDER: Record<string, string> = {
   'date:desc': 'order:created_desc',
   'date:asc': 'order:created_asc',
 }
-
-const RULE34_SORT_DROP_REASON =
-  'Ordering is not supported on Rule34; results are newest first. The sort term was not sent.'
 
 /** A `duration:` term is consumed client-side on every source. */
 const DURATION_RE = /^duration:/
@@ -183,7 +183,7 @@ export function normalizeQueryDetailed(
       continue
     }
 
-    // ── sort: — translated on e621, dropped with a notice on Rule34 ─────
+    // ── sort: — translated on e621, forwarded on Rule34 ───────────────
     if (body.startsWith('sort:')) {
       const spec = body.slice('sort:'.length)
       const [rawField, rawDirection] = spec.split(':')
@@ -196,10 +196,24 @@ export function normalizeQueryDetailed(
       }
 
       if (target === 'rule34') {
-        // `sort=` is ENTIRELY ignored on Rule34 — every value returns the
-        // same newest-id-first set, and no seed parameter has any effect.
-        // Translating would be a no-op that looks honored.
-        dropped.push({ term: token, reason: RULE34_SORT_DROP_REASON })
+        // Rule34 honors `sort:` metatags via the same `tags` parameter as
+        // every other metatag. Canonical `id`/`score` are already native
+        // spelling; canonical `date` has no counterpart (Rule34 exposes no
+        // creation timestamp), so it orders by id, which is creation order.
+        // Any other field (`updated`, `user`, `random`, ...) is native
+        // power-user syntax and passes through verbatim.
+        if (field === 'id' || field === 'score' || field === 'date') {
+          if (direction !== 'asc' && direction !== 'desc') {
+            dropped.push({
+              term: token,
+              reason: `"${rawDirection}" is not a direction. Use asc or desc.`,
+            })
+            continue
+          }
+          out.push(`sort:${field === 'date' ? 'id' : field}:${direction}`)
+          continue
+        }
+        out.push(token)
         continue
       }
 

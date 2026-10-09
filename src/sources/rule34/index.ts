@@ -35,9 +35,10 @@ export const RULE34_CAPABILITIES: SourceCapabilities = {
   nativeDateFilter: false,
   // Rule34 exposes no duration operator; durations are probed instead.
   nativeDurationFilter: false,
-  // `sort=` is entirely ignored upstream — every value returns the same set.
-  ordering: false,
-  sortFields: [],
+  // Rule34 honors `sort:` metatags (id, score, updated, user, random,
+  // ...) via the tags parameter; canonical `date` is normalized to `id`.
+  ordering: true,
+  sortFields: ['id', 'score', 'date'],
   tagCompletion: true,
   // Upstream silently clamps a higher `limit` at HTTP 200 with byte-identical
   // results and no truncation signal, so the clamp is applied client-side.

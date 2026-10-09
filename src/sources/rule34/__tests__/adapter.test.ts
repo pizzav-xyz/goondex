@@ -98,13 +98,11 @@ describe('search request shape', () => {
     expect(tags).not.toMatch(/rating:[sqe]\b/)
   })
 
-  it('drops a sort term and reports it rather than sending it', async () => {
-    const outcome = await rule34Adapter.search({ query: 'solo sort:id', page: 0, limit: 100 })
+  it('forwards a sort term upstream with nothing dropped', async () => {
+    const outcome = await rule34Adapter.search({ query: 'solo sort:score', page: 0, limit: 100 })
     const { params } = lastRequest()
-    expect(params.get('tags')).toBe('solo')
-    expect(outcome.dropped).toHaveLength(1)
-    expect(outcome.dropped[0].term).toBe('sort:id')
-    expect(outcome.dropped[0].reason).toMatch(/newest first/i)
+    expect(params.get('tags')).toBe('solo sort:score:desc')
+    expect(outcome.dropped).toEqual([])
   })
 
   // Rule34 has no date operator, so the term is routed into the proxy's
@@ -155,9 +153,9 @@ describe('capability declaration', () => {
     expect([...RULE34_CAPABILITIES.ratings].sort()).toEqual(['explicit', 'questionable'])
   })
 
-  it('declares no ordering support, because sort= is ignored upstream', () => {
-    expect(RULE34_CAPABILITIES.ordering).toBe(false)
-    expect(RULE34_CAPABILITIES.sortFields).toEqual([])
+  it('declares ordering support, because sort: tags are honored upstream', () => {
+    expect(RULE34_CAPABILITIES.ordering).toBe(true)
+    expect([...RULE34_CAPABILITIES.sortFields].sort()).toEqual(['date', 'id', 'score'])
   })
 
   it('declares no native date filter', () => {
@@ -255,10 +253,10 @@ describe('caching', () => {
   })
 
   it('still reports dropped terms on a cached search', async () => {
-    await rule34Adapter.search({ query: 'sort:id', page: 0, limit: 100 })
-    const second = await rule34Adapter.search({ query: 'sort:id', page: 0, limit: 100 })
+    await rule34Adapter.search({ query: 'rating:zzz', page: 0, limit: 100 })
+    const second = await rule34Adapter.search({ query: 'rating:zzz', page: 0, limit: 100 })
     // The drop is a property of the query, not of the response, so it must
-    // survive the cache or a repeat search would claim the sort was honored.
+    // survive the cache or a repeat search would claim the term was honored.
     expect(second.dropped).toHaveLength(1)
   })
 

@@ -89,17 +89,32 @@ describe('sort translation', () => {
   })
 
   it.each([
-    'sort:id', 'sort:id:asc', 'sort:id:desc',
-    'sort:score', 'sort:score:asc', 'sort:score:desc',
-    'sort:date', 'sort:date:asc', 'sort:date:desc',
-  ])('drops %s on Rule34 with a notice that states the real order', (term) => {
+    ['sort:id', 'sort:id:desc'],
+    ['sort:id:asc', 'sort:id:asc'],
+    ['sort:id:desc', 'sort:id:desc'],
+    ['sort:score', 'sort:score:desc'],
+    ['sort:score:asc', 'sort:score:asc'],
+    ['sort:score:desc', 'sort:score:desc'],
+    // Rule34 exposes no creation timestamp, so canonical `date` orders by
+    // id, which is creation order.
+    ['sort:date', 'sort:id:desc'],
+    ['sort:date:asc', 'sort:id:asc'],
+    ['sort:date:desc', 'sort:id:desc'],
+  ])('forwards %s to Rule34 as %s with nothing dropped', (input, expected) => {
+    const result = normalizeQuery(input, R34)
+    expect(result.query).toBe(expected)
+    expect(result.dropped).toEqual([])
+  })
+
+  it.each([
+    'sort:random',
+    'sort:random:3456',
+    'sort:updated:desc',
+    'sort:user:asc',
+  ])('passes native Rule34 %s through verbatim', (term) => {
     const result = normalizeQuery(term, R34)
-    expect(result.query).toBe('')
-    expect(result.dropped).toHaveLength(1)
-    expect(result.dropped[0].term).toBe(term)
-    expect(result.dropped[0].reason).toMatch(/not supported on Rule34/i)
-    expect(result.dropped[0].reason).toMatch(/newest first/i)
-    expect(result.dropped[0].reason).toMatch(/not sent/i)
+    expect(result.query).toBe(term)
+    expect(result.dropped).toEqual([])
   })
 
   it('rejects an unorderable field on e621', () => {
@@ -112,6 +127,13 @@ describe('sort translation', () => {
     const result = normalizeQuery('sort:id:sideways', E621)
     expect(result.query).toBe('')
     expect(result.dropped).toHaveLength(1)
+  })
+
+  it('rejects an invalid direction on a canonical Rule34 sort term', () => {
+    const result = normalizeQuery('sort:score:sideways', R34)
+    expect(result.query).toBe('')
+    expect(result.dropped).toHaveLength(1)
+    expect(result.dropped[0].reason).toMatch(/not a direction/i)
   })
 })
 
@@ -241,7 +263,7 @@ describe('drop list discipline', () => {
   })
 
   it('reports every dropped term, each with a reason', () => {
-    const result = normalizeQuery('sort:id sort:score rating:zzz', R34)
+    const result = normalizeQuery('-sort:id sort:score:sideways rating:zzz', R34)
     expect(result.dropped).toHaveLength(3)
     for (const entry of result.dropped) {
       expect(entry.term).toBeTruthy()
@@ -250,9 +272,9 @@ describe('drop list discipline', () => {
   })
 
   it('keeps honored terms while disclosing the dropped one', () => {
-    const result = normalizeQuery('solo sort:id rating:explicit', R34)
+    const result = normalizeQuery('solo -sort:id rating:explicit', R34)
     expect(result.query).toBe('solo rating:explicit')
-    expect(result.dropped.map((d) => d.term)).toEqual(['sort:id'])
+    expect(result.dropped.map((d) => d.term)).toEqual(['-sort:id'])
   })
 })
 

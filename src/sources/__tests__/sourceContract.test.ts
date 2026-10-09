@@ -19,8 +19,8 @@ const rule34Capabilities: SourceCapabilities = {
   ratings: ['explicit', 'questionable'],
   nativeDateFilter: false,
   nativeDurationFilter: false,
-  ordering: false,
-  sortFields: [],
+  ordering: true,
+  sortFields: ['id', 'score', 'date'],
   tagCompletion: true,
   maxPageSize: 1000,
   authMechanism: 'query',
@@ -173,13 +173,13 @@ describe('SearchOutcome reporting', () => {
       search: async (): Promise<SearchOutcome> => ({
         posts: [makePost()],
         dropped: [
-          { term: 'sort:id', reason: 'Ordering is not supported on Rule34; showing newest first instead.' },
+          { term: 'rating:zzz', reason: '"zzz" is not a recognized rating.' },
         ],
       }),
     })
-    const outcome = await adapter.search({ query: 'sort:id', page: 0, limit: 100 })
+    const outcome = await adapter.search({ query: 'rating:zzz', page: 0, limit: 100 })
     expect(outcome.dropped).toHaveLength(1)
-    expect(outcome.dropped[0].term).toBe('sort:id')
+    expect(outcome.dropped[0].term).toBe('rating:zzz')
     expect(outcome.dropped[0].reason).toBeTruthy()
   })
 })
