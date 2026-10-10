@@ -1,15 +1,15 @@
-import { useActiveSource } from './registry'
+import { useActiveSource, getSource } from './registry'
 import type { Post } from './types'
 
 /**
- * Shared media predicates reading the active adapter's declared capabilities,
+ * Shared media predicates reading the post's source capabilities,
  * replacing the per-component `fileExt === 'webm' || 'mp4'` checks that
  * disagreed across boards: Rule34 serves mp4 and gif, e621 serves webm and
  * mp4, so a hardcoded set is wrong on one of them.
  */
 
 export function isVideo(post: Post): boolean {
-  return useActiveSource().value.capabilities.videoExtensions.includes(post.fileExt)
+  return getSource(post.source).capabilities.videoExtensions.includes(post.fileExt.toLowerCase())
 }
 
 /**

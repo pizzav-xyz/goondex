@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { isVideo, getThumbnailUrl } from '@/sources/media'
+import BufferBadge from './BufferBadge.vue'
 import type { Post } from '@/types'
 
 const props = defineProps<{
@@ -83,6 +84,7 @@ watch(
       {{ post.rating }}
     </span>
     <span v-if="isVideoPost" class="image-card-ext">{{ post.fileExt?.toUpperCase() }}</span>
+    <BufferBadge :post="post" />
     <div class="image-card-overlay">
       <div class="image-card-tags">
         <span v-for="t in tags" :key="t" class="image-card-tag">{{ t }}</span>

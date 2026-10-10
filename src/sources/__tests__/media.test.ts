@@ -34,34 +34,30 @@ beforeEach(() => {
 })
 
 describe('isVideo per source', () => {
-  it('treats webm as video on e621 but not on Rule34', () => {
-    const post = makePost({ source: 'e621', fileExt: 'webm' })
-    useSettingsStore().setActiveSource('e621')
-    expect(isVideo(post)).toBe(true)
-    useSettingsStore().setActiveSource('rule34')
-    expect(isVideo(post)).toBe(false)
+  it('treats webm as video for e621 posts only', () => {
+    const e621Post = makePost({ source: 'e621', fileExt: 'webm' })
+    const rule34Post = makePost({ source: 'rule34', fileExt: 'webm' })
+    expect(isVideo(e621Post)).toBe(true)
+    expect(isVideo(rule34Post)).toBe(false)
   })
 
-  it('treats gif as video on Rule34 but not on e621', () => {
-    const post = makePost({ source: 'rule34', fileExt: 'gif' })
-    useSettingsStore().setActiveSource('rule34')
-    expect(isVideo(post)).toBe(true)
-    useSettingsStore().setActiveSource('e621')
-    expect(isVideo(post)).toBe(false)
+  it('treats gif as video for Rule34 posts only', () => {
+    const rule34Post = makePost({ source: 'rule34', fileExt: 'gif' })
+    const e621Post = makePost({ source: 'e621', fileExt: 'gif' })
+    expect(isVideo(rule34Post)).toBe(true)
+    expect(isVideo(e621Post)).toBe(false)
   })
 
   it('treats mp4 as video on both sources', () => {
-    const post = makePost({ fileExt: 'mp4' })
-    useSettingsStore().setActiveSource('rule34')
-    expect(isVideo(post)).toBe(true)
-    useSettingsStore().setActiveSource('e621')
-    expect(isVideo(post)).toBe(true)
+    const rule34Post = makePost({ source: 'rule34', fileExt: 'mp4' })
+    const e621Post = makePost({ source: 'e621', fileExt: 'mp4' })
+    expect(isVideo(rule34Post)).toBe(true)
+    expect(isVideo(e621Post)).toBe(true)
   })
 
-  it('never treats a still image as video on either source', () => {
-    const post = makePost({ fileExt: 'png' })
-    for (const id of ['rule34', 'e621'] as const) {
-      useSettingsStore().setActiveSource(id)
+  it('never treats a still image as video regardless of source', () => {
+    for (const src of ['rule34', 'e621'] as const) {
+      const post = makePost({ source: src, fileExt: 'png' })
       expect(isVideo(post)).toBe(false)
     }
   })
